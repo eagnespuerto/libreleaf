@@ -1,0 +1,15 @@
+{
+  "name": "libreleaf",
+  "version": "0.0.1",
+  "private": true,
+  "description": "The LaTeX word processor for independent researchers.",
+  "license": "AGPL-3.0-or-later",
+  "author": "Ella Agnes Puerto",
+  "repository": "github:eagnespuerto/libreleaf",
+  "homepage": "https://eagnespuerto.github.io/libreleaf/",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "test": "node --test packages/**/*.test.js",
+    "texcount": "node packages/texcount/texcount.js"
+  }
+}
