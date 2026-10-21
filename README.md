@@ -62,6 +62,7 @@ no build step.
 
 ## Roadmap
 
+- Next six weeks, version by version: [docs/ROADMAP.md](docs/ROADMAP.md)
 - Product spec and phases: [docs/SPEC.md](docs/SPEC.md)
 - Design, ribbon, colours and type: [docs/DESIGN.md](docs/DESIGN.md)
 - Brand palette page: [docs/brand/palette.html](https://eagnespuerto.github.io/libreleaf/docs/brand/palette.html)
