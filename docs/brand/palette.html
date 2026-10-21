@@ -1,0 +1,382 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="favicon/favicon-light.svg" type="image/svg+xml">
+<title>LibreLeaf Palette</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,800;1,400&family=Red+Hat+Display:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a stack of paper sheets, like the logo. Each section is a sheet on the
+   canvas, and the two app previews sit side by side as light and dark sheets. */
+:root {
+  /* brand */
+  --walnut: #432323; --deep: #2F5755; --sage: #5A9690; --mist: #E0D9D9; --sage-light: #7DB3AD;
+  /* status source */
+  --crimson: #BF092F; --navy: #132440; --ocean: #16476A; --teal: #3B9797;
+
+  --canvas: #E0D9D9; --page: #F7F4F4; --surface: #EEE9E9; --text: #432323;
+  --muted: #6E5050; --rule: #CFC5C5; --primary: #2F5755; --on-primary: #E0D9D9;
+  --accent: #2F5755; --accent-subtle: rgba(90,150,144,.22); --shadow: rgba(67,35,35,.14);
+  --logo-light: block; --logo-dark: none;
+
+  --f-display: "Playfair Display", "Iowan Old Style", Georgia, serif;
+  --f-ui: "Red Hat Display", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Red Hat Mono", ui-monospace, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --canvas: #432323; --page: #4C2929; --surface: #523030; --text: #E0D9D9;
+  --muted: #BFAEAE; --rule: #6A4545; --primary: #2F5755; --on-primary: #E0D9D9;
+  --accent: #7DB3AD; --accent-subtle: #2F5755; --shadow: rgba(0,0,0,.35);
+  --logo-light: none; --logo-dark: block; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --canvas: #432323; --page: #4C2929; --surface: #523030; --text: #E0D9D9;
+  --muted: #BFAEAE; --rule: #6A4545; --primary: #2F5755; --on-primary: #E0D9D9;
+  --accent: #7DB3AD; --accent-subtle: #2F5755; --shadow: rgba(0,0,0,.35);
+  --logo-light: none; --logo-dark: block; color-scheme: dark; }
+
+/* fixed scopes for side-by-side mode previews (both always defined) */
+.scope-light { --s-canvas:#E0D9D9; --s-page:#F7F4F4; --s-surface:#EEE9E9; --s-text:#432323; --s-muted:#6E5050; --s-rule:#D6CCCC;
+  --s-accent:#2F5755; --s-tint:rgba(90,150,144,.22); --s-err:#BF092F; --s-ok:#1F6363; --s-info:#16476A; --s-warn:#844C00;
+  --s-err-bg:rgba(191,9,47,.10); --s-ok-bg:rgba(59,151,151,.16); --s-info-bg:rgba(22,71,106,.10); --s-warn-bg:rgba(224,160,48,.20);
+  --s-tip-bg:#132440; --s-tip-fg:#E0D9D9; }
+.scope-dark { --s-canvas:#432323; --s-page:#F7F4F4; --s-surface:#523030; --s-text:#E0D9D9; --s-muted:#BFAEAE; --s-rule:#6A4545;
+  --s-accent:#7DB3AD; --s-tint:#2F5755; --s-err:#F08A9C; --s-ok:#5FBDBD; --s-info:#8DBBE0; --s-warn:#E0A030;
+  --s-err-bg:rgba(240,138,156,.14); --s-ok-bg:rgba(95,189,189,.14); --s-info-bg:rgba(141,187,224,.14); --s-warn-bg:rgba(224,160,48,.14);
+  --s-tip-bg:#E0D9D9; --s-tip-fg:#432323; }
+
+* { box-sizing: border-box; }
+body { background: var(--canvas); color: var(--text); font-family: var(--f-ui); font-size: 16px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-block: 28px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 40px; }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; margin: 0; font-weight: 600; }
+h2 { font-size: clamp(1.7rem, 3.4vw, 2.5rem); }
+h3 { font-size: 1.2rem; }
+p { margin: 0; max-width: 65ch; }
+.eyebrow { font-family: var(--f-ui); font-weight: 600; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+/* top bar */
+.bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.seg { display: inline-flex; border: 1px solid var(--rule); border-radius: 999px; padding: 3px; background: var(--surface); }
+.seg button { font: 500 .85rem var(--f-ui); color: var(--text); background: transparent; border: 0; border-radius: 999px; padding: 6px 14px; cursor: pointer; }
+.seg button[aria-pressed="true"] { background: var(--primary); color: var(--on-primary); }
+button:focus-visible, .copy:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* sheet = a section on paper, with the stack offset behind it */
+.sheet { position: relative; background: var(--page); border: 1.5px solid var(--text); border-radius: 4px 10px 6px 12px;
+  padding: clamp(20px, 4vw, 44px); display: grid; gap: 22px; box-shadow: 6px 6px 0 -1.5px var(--surface), 6px 6px 0 0 var(--text), 0 18px 40px var(--shadow); min-width: 0; }
+.sheet > header { display: grid; gap: 8px; }
+
+/* hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 32px; align-items: center; }
+.hero .logo { width: 100%; max-width: 520px; margin: -6% auto; aspect-ratio: 1; }
+.hero .logo img { width: 100%; height: 100%; object-fit: contain; }
+.logo-l { display: var(--logo-light); } .logo-d { display: var(--logo-dark); }
+.hero h1 { font-size: clamp(2.4rem, 6vw, 4.6rem); line-height: 1.02; font-weight: 800; }
+.hero h1 em { font-weight: 400; color: var(--accent); }
+.hero .lede { font-size: 1.1rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip { font: 500 .8rem var(--f-ui); border: 1px solid var(--rule); border-radius: 999px; padding: 4px 12px; background: var(--surface); }
+
+/* swatches */
+.swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; }
+.sw { display: grid; grid-template-rows: 150px auto; border: 1.5px solid var(--text); border-radius: 4px; overflow: hidden; background: var(--surface); min-width: 0; }
+.sw .chipcol { display: flex; align-items: flex-end; padding: 12px; font: 600 .78rem var(--f-ui); letter-spacing: .08em; text-transform: uppercase; }
+.sw .info { padding: 12px; display: grid; gap: 4px; font-size: .85rem; }
+.sw .name { font-family: var(--f-display); font-size: 1.15rem; font-weight: 600; }
+.sw .role { color: var(--muted); }
+.copy { all: unset; cursor: pointer; font-family: var(--f-mono); font-size: .85rem; border-bottom: 1px dashed var(--muted); justify-self: start; }
+.copy.done::after { content: " ✓ copied"; font-family: var(--f-ui); color: var(--accent); }
+.added { font: 600 .7rem var(--f-ui); letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+
+/* status grid */
+.status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.mode { background: var(--s-canvas); color: var(--s-text); border-radius: 8px; padding: 18px; display: grid; gap: 10px; border: 1.5px solid var(--text); min-width: 0; }
+.mode .eyebrow { color: var(--s-muted); }
+.alert { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: start; padding: 10px 12px; border-radius: 6px; border-left: 4px solid currentColor; font-size: .92rem; }
+.alert b { font-weight: 700; }
+.alert .hex { font-family: var(--f-mono); font-size: .75rem; opacity: .85; }
+.alert .body { color: var(--s-text); }
+.a-err { color: var(--s-err); background: var(--s-err-bg); }
+.a-ok { color: var(--s-ok); background: var(--s-ok-bg); }
+.a-info { color: var(--s-info); background: var(--s-info-bg); }
+.a-warn { color: var(--s-warn); background: var(--s-warn-bg); }
+.src { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.dot { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--text); display: inline-block; vertical-align: middle; }
+
+/* app mock */
+.apps { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.app { background: var(--s-canvas); color: var(--s-text); border: 1.5px solid var(--text); border-radius: 8px; overflow: hidden; display: grid; min-width: 0; }
+.titlebar { display: flex; align-items: center; gap: 10px; padding: 10px 14px; background: var(--s-surface); font-size: .85rem; flex-wrap: wrap; }
+.titlebar .doc { font-weight: 600; }
+.titlebar .saved { color: var(--s-muted); }
+.titlebar .share { margin-left: auto; background: #2F5755; color: #E0D9D9; border-radius: 999px; padding: 4px 14px; font-weight: 600; }
+.tabs { display: flex; gap: 2px; padding: 0 10px; background: var(--s-surface); overflow-x: auto; font-size: .82rem; font-weight: 500; }
+.tabs span { padding: 7px 10px; border-bottom: 3px solid transparent; white-space: nowrap; }
+.tabs .on { border-color: var(--s-accent); color: var(--s-accent); font-weight: 700; }
+.ribbon { display: flex; gap: 0; padding: 8px 10px 4px; background: var(--s-surface); border-bottom: 1px solid var(--s-rule); overflow-x: auto; }
+.grp { display: grid; gap: 4px; padding: 0 12px; border-right: 1px solid var(--s-rule); justify-items: center; }
+.grp:last-child { border-right: 0; }
+.btns { display: flex; gap: 4px; }
+.btn { width: 30px; height: 30px; border-radius: 5px; display: grid; place-items: center; font: 700 .8rem var(--f-ui); }
+.btn.on { background: var(--s-tint); }
+.btn.big { width: 44px; height: 44px; font-size: 1rem; }
+.grp small { font-size: .68rem; color: var(--s-muted); white-space: nowrap; }
+.desk { padding: 22px; display: grid; justify-items: center; position: relative; }
+.paper { background: var(--s-page); color: #432323; width: 100%; max-width: 420px; padding: 26px 28px; box-shadow: 0 6px 18px rgba(0,0,0,.18); font-family: var(--f-display); font-size: .9rem; line-height: 1.6; display: grid; gap: 8px; }
+.paper h4 { margin: 0; font-size: 1.05rem; text-align: center; }
+.paper .by { text-align: center; font-size: .78rem; font-style: italic; }
+.paper .sec { font-weight: 600; font-size: .92rem; }
+.paper .eq { text-align: center; font-style: italic; }
+.paper .sel { background: rgba(90,150,144,.3); }
+.paper .cite { color: #2F5755; }
+.paper .err { text-decoration: underline wavy #BF092F; text-underline-offset: 3px; }
+.paper .warn { text-decoration: underline dotted #844C00; text-decoration-thickness: 2px; text-underline-offset: 3px; }
+.tip { position: absolute; right: 18px; top: 14px; background: var(--s-tip-bg); color: var(--s-tip-fg); font-size: .75rem; padding: 7px 10px; border-radius: 6px; max-width: 220px; font-family: var(--f-ui); line-height: 1.4; }
+.tip code { font-family: var(--f-mono); }
+.toast { margin: 0 14px 14px; }
+
+/* contrast table */
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .92rem; min-width: 560px; }
+th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--rule); }
+th { font: 600 .74rem var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+td.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+.sample { display: inline-block; padding: 2px 10px; border-radius: 4px; font-weight: 600; border: 1px solid var(--rule); }
+.v { font-weight: 600; }
+
+/* tokens */
+pre { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 16px; overflow-x: auto; font: .82rem/1.6 var(--f-mono); }
+.row { display: flex; justify-content: space-between; align-items: end; gap: 12px; flex-wrap: wrap; }
+.btn-copy { font: 600 .85rem var(--f-ui); background: var(--primary); color: var(--on-primary); border: 0; border-radius: 999px; padding: 8px 16px; cursor: pointer; }
+
+.favs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.favtile { display: flex; align-items: end; gap: 18px; padding: 18px; border: 1.5px solid var(--text); border-radius: 6px; color: #432323; font-size: .85rem; flex-wrap: wrap; }
+.favtile span { margin-left: auto; font-weight: 600; }
+@media (max-width: 600px) { .favs { grid-template-columns: 1fr; } }
+.fonts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.font { border-top: 1.5px solid var(--text); padding-top: 12px; display: grid; gap: 6px; min-width: 0; }
+.font .big { font-size: clamp(2rem, 5vw, 3.2rem); line-height: 1.1; overflow-wrap: anywhere; }
+
+@media (max-width: 900px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero .logo { margin: -8% auto -10%; max-width: 420px; }
+  .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .status, .apps, .fonts { grid-template-columns: 1fr; }
+}
+@media (max-width: 420px) { .swatches { grid-template-columns: 1fr; } .tip { position: static; margin-bottom: 10px; } }
+@media (prefers-reduced-motion: no-preference) { .copy, .seg button { transition: background .15s, color .15s; } }
+</style>
+
+<div class="wrap">
+  <div class="bar">
+    <span class="eyebrow">LibreLeaf brand · palette v1 · 21 Oct 2026</span>
+    <div class="seg" role="group" aria-label="Theme">
+      <button id="t-system" data-t="system" aria-pressed="true">System</button>
+      <button id="t-light" data-t="light" aria-pressed="false">Light</button>
+      <button id="t-dark" data-t="dark" aria-pressed="false">Dark</button>
+    </div>
+  </div>
+
+  <section class="sheet">
+    <div class="hero">
+      <div class="logo">
+        <img class="logo-l" src="logo/libreleaf-logo-deepteal.png" alt="LibreLeaf logo: a stack of hand-drawn papers with a teal leaf on the top sheet">
+        <img class="logo-d" src="logo/libreleaf-logo-dark.png" alt="LibreLeaf logo, line art in light grey for dark backgrounds">
+      </div>
+      <div style="display:grid;gap:18px">
+        <span class="eyebrow">Colour &amp; type reference</span>
+        <h1>Walnut, teal <em>and paper.</em></h1>
+        <p class="lede">Four brand colours from the logo, one extra teal for dark mode, and four status colours. Light mode sets Walnut ink on Mist paper; dark mode swaps them. Every pairing used for text below passes WCAG AA.</p>
+        <div class="chips"><span class="chip">Playfair Display</span><span class="chip">Red Hat Display</span><span class="chip">Tokens for Tailwind / shadcn</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">01 · Brand</span><h2>Brand colours</h2>
+      <p>Click a hex code to copy it.</p></header>
+    <div class="swatches">
+      <div class="sw"><div class="chipcol" style="background:#432323;color:#E0D9D9">Ink · light</div>
+        <div class="info"><span class="name">Walnut</span><button class="copy" data-c="#432323">#432323</button><span class="mono">rgb(67, 35, 35)</span><span class="role">Text in light mode, background in dark mode, logo line art</span></div></div>
+      <div class="sw"><div class="chipcol" style="background:#2F5755;color:#E0D9D9">Primary</div>
+        <div class="info"><span class="name">Deep teal</span><button class="copy" data-c="#2F5755">#2F5755</button><span class="mono">rgb(47, 87, 85)</span><span class="role">Wordmark, buttons, active tab, light-mode links</span></div></div>
+      <div class="sw"><div class="chipcol" style="background:#5A9690;color:#432323">Leaf</div>
+        <div class="info"><span class="name">Sage teal</span><button class="copy" data-c="#5A9690">#5A9690</button><span class="mono">rgb(90, 150, 144)</span><span class="role">The leaf, highlights, selection tint. Never small text</span></div></div>
+      <div class="sw"><div class="chipcol" style="background:#E0D9D9;color:#432323">Paper</div>
+        <div class="info"><span class="name">Mist</span><button class="copy" data-c="#E0D9D9">#E0D9D9</button><span class="mono">rgb(224, 217, 217)</span><span class="role">Canvas in light mode, text in dark mode, logo paper</span></div></div>
+      <div class="sw"><div class="chipcol" style="background:#7DB3AD;color:#432323">Dark-mode accent</div>
+        <div class="info"><span class="added">Added</span><span class="name">Sage light</span><button class="copy" data-c="#7DB3AD">#7DB3AD</button><span class="mono">rgb(125, 179, 173)</span><span class="role">Links and focus on Walnut (5.94:1)</span></div></div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">02 · Status</span><h2>Errors, warnings and success</h2>
+      <p>Taken from the second palette. The source colours fail on one background or the other, so each mode uses a darker or lighter shade of the same hue. Every message carries an icon and a word, because the success teal is nearly the same as the brand teal.</p></header>
+    <div class="src">
+      <span class="eyebrow">Source</span>
+      <span><span class="dot" style="background:#BF092F"></span> <button class="copy" data-c="#BF092F">#BF092F</button></span>
+      <span><span class="dot" style="background:#132440"></span> <button class="copy" data-c="#132440">#132440</button></span>
+      <span><span class="dot" style="background:#16476A"></span> <button class="copy" data-c="#16476A">#16476A</button></span>
+      <span><span class="dot" style="background:#3B9797"></span> <button class="copy" data-c="#3B9797">#3B9797</button></span>
+      <span><span class="dot" style="background:#E0A030"></span> <button class="copy" data-c="#E0A030">#E0A030</button> <span class="added">added</span></span>
+    </div>
+    <div class="status">
+      <div class="mode scope-light"><span class="eyebrow">Light mode · on Mist</span>
+        <div class="alert a-err"><span>✕</span><span class="body"><b>Compile failed.</b> Line 42: a <code>\end{figure}</code> is missing.</span><span class="hex">#BF092F</span></div>
+        <div class="alert a-warn"><span>!</span><span class="body"><b>Check this.</b> Figure 3 is never referenced in the text.</span><span class="hex">#844C00</span></div>
+        <div class="alert a-ok"><span>✓</span><span class="body"><b>Compiled.</b> 12 pages, 0 errors, in 3.1 s.</span><span class="hex">#1F6363</span></div>
+        <div class="alert a-info"><span>i</span><span class="body"><b>Tip.</b> arXiv needs the .bbl file, not just .bib.</span><span class="hex">#16476A</span></div>
+      </div>
+      <div class="mode scope-dark"><span class="eyebrow">Dark mode · on Walnut</span>
+        <div class="alert a-err"><span>✕</span><span class="body"><b>Compile failed.</b> Line 42: a <code>\end{figure}</code> is missing.</span><span class="hex">#F08A9C</span></div>
+        <div class="alert a-warn"><span>!</span><span class="body"><b>Check this.</b> Figure 3 is never referenced in the text.</span><span class="hex">#E0A030</span></div>
+        <div class="alert a-ok"><span>✓</span><span class="body"><b>Compiled.</b> 12 pages, 0 errors, in 3.1 s.</span><span class="hex">#5FBDBD</span></div>
+        <div class="alert a-info"><span>i</span><span class="body"><b>Tip.</b> arXiv needs the .bbl file, not just .bib.</span><span class="hex">#8DBBE0</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">03 · In the app</span><h2>The editor in both modes</h2>
+      <p>Google Docs-style page with a Word-style ribbon. The paper stays light in dark mode so it matches the PDF.</p></header>
+    <div class="apps">
+      <div class="app scope-light" aria-label="Light mode preview">
+        <div class="titlebar"><span class="doc">Variable-star survey.tex</span><span class="saved">Saved</span><span class="share">Share</span></div>
+        <div class="tabs"><span>Home</span><span class="on">Insert</span><span>References</span><span>Layout</span><span>Review</span><span>Publish</span><span>Source</span></div>
+        <div class="ribbon">
+          <div class="grp"><div class="btns"><span class="btn big">▣</span><span class="btn big">▦</span></div><small>Figure · Table</small></div>
+          <div class="grp"><div class="btns"><span class="btn big on">∑</span></div><small>Equation</small></div>
+          <div class="grp"><div class="btns"><span class="btn">[1]</span><span class="btn">§</span><span class="btn">¹</span></div><small>Cite · Ref · Note</small></div>
+        </div>
+        <div class="desk">
+          <div class="tip">Insert equation<br><code>\begin{equation}</code> · Ctrl+Shift+E</div>
+          <div class="paper">
+            <h4>Period changes in three RR Lyrae stars</h4>
+            <div class="by">A. Researcher · independent</div>
+            <div class="sec">1 Introduction</div>
+            <div>Amateur photometry <span class="cite">[Smith 2021]</span> now reaches <span class="sel">millimagnitude precision</span>, as shown in <span class="warn">Figure 3</span>.</div>
+            <div class="eq">P(t) = P₀ + β t</div>
+            <div>Residuals follow <span class="err">\citep{hartman}</span>.</div>
+          </div>
+        </div>
+        <div class="alert a-ok toast"><span>✓</span><span class="body"><b>Ready for arXiv.</b> 0 problems found.</span><span></span></div>
+      </div>
+      <div class="app scope-dark" aria-label="Dark mode preview">
+        <div class="titlebar"><span class="doc">Variable-star survey.tex</span><span class="saved">Saved</span><span class="share">Share</span></div>
+        <div class="tabs"><span>Home</span><span class="on">Insert</span><span>References</span><span>Layout</span><span>Review</span><span>Publish</span><span>Source</span></div>
+        <div class="ribbon">
+          <div class="grp"><div class="btns"><span class="btn big">▣</span><span class="btn big">▦</span></div><small>Figure · Table</small></div>
+          <div class="grp"><div class="btns"><span class="btn big on">∑</span></div><small>Equation</small></div>
+          <div class="grp"><div class="btns"><span class="btn">[1]</span><span class="btn">§</span><span class="btn">¹</span></div><small>Cite · Ref · Note</small></div>
+        </div>
+        <div class="desk">
+          <div class="tip">Insert equation<br><code>\begin{equation}</code> · Ctrl+Shift+E</div>
+          <div class="paper">
+            <h4>Period changes in three RR Lyrae stars</h4>
+            <div class="by">A. Researcher · independent</div>
+            <div class="sec">1 Introduction</div>
+            <div>Amateur photometry <span class="cite">[Smith 2021]</span> now reaches <span class="sel">millimagnitude precision</span>, as shown in <span class="warn">Figure 3</span>.</div>
+            <div class="eq">P(t) = P₀ + β t</div>
+            <div>Residuals follow <span class="err">\citep{hartman}</span>.</div>
+          </div>
+        </div>
+        <div class="alert a-ok toast"><span>✓</span><span class="body"><b>Ready for arXiv.</b> 0 problems found.</span><span></span></div>
+      </div>
+    </div>
+    <p style="font-size:.88rem">The example paper is sample text. Red wavy underline = compile error; amber dotted underline = health-check warning.</p>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">04 · Type</span><h2>Typefaces</h2></header>
+    <div class="fonts">
+      <div class="font"><span class="eyebrow">Display · headings, tagline, the page</span>
+        <span class="big" style="font-family:var(--f-display)">Playfair Display</span>
+        <p style="font-family:var(--f-display);font-style:italic">The LaTeX word processor for independent researchers</p></div>
+      <div class="font"><span class="eyebrow">Interface · wordmark, ribbon, menus</span>
+        <span class="big" style="font-family:var(--f-ui);font-weight:500">Red Hat Display</span>
+        <p>Insert · References · Layout · Review · Publish</p></div>
+    </div>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">04b · Icon</span><h2>Favicon</h2>
+      <p>The paper and leaf on their own. The light version has Mist paper, for light tab bars. The dark version has Walnut paper with a Mist outline, for dark tab bars. The browser picks one to match its own theme.</p></header>
+    <div class="favs">
+      <div class="favtile" style="background:#F1F1F1"><img src="favicon/favicon-light-180.png" alt="Light favicon at 180 px" width="90" height="90"><img src="favicon/favicon-light-32.png" alt="Light favicon at 32 px" width="32" height="32"><img src="favicon/favicon-light-32.png" alt="Light favicon at 16 px" width="16" height="16"><span>Light tab bar</span></div>
+      <div class="favtile" style="background:#35363A;color:#E0D9D9"><img src="favicon/favicon-dark-180.png" alt="Dark favicon at 180 px" width="90" height="90"><img src="favicon/favicon-dark-32.png" alt="Dark favicon at 32 px" width="32" height="32"><img src="favicon/favicon-dark-32.png" alt="Dark favicon at 16 px" width="16" height="16"><span>Dark tab bar</span></div>
+    </div>
+<pre>&lt;link rel="icon" href="/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)"&gt;
+&lt;link rel="icon" href="/favicon-dark.svg"  type="image/svg+xml" media="(prefers-color-scheme: dark)"&gt;
+&lt;link rel="icon" href="/favicon-light.ico" sizes="16x16 32x32 48x48"&gt;
+&lt;link rel="apple-touch-icon" href="/favicon-light-180.png"&gt;</pre>
+  </section>
+
+  <section class="sheet">
+    <header><span class="eyebrow">05 · Contrast</span><h2>Measured contrast</h2>
+      <p>WCAG 2.2. AA needs 4.5:1 for body text and 3:1 for large text and icons.</p></header>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Sample</th><th>Pair</th><th>Ratio</th><th>Use</th></tr></thead>
+      <tbody>
+        <tr><td><span class="sample" style="background:#E0D9D9;color:#432323">Aa</span></td><td>Walnut on Mist</td><td class="num">10.04</td><td class="v">✓ Body text, both modes</td></tr>
+        <tr><td><span class="sample" style="background:#F7F4F4;color:#432323">Aa</span></td><td>Walnut on paper</td><td class="num">12.77</td><td class="v">✓ Document text</td></tr>
+        <tr><td><span class="sample" style="background:#E0D9D9;color:#2F5755">Aa</span></td><td>Deep teal on Mist</td><td class="num">5.77</td><td class="v">✓ Light-mode links</td></tr>
+        <tr><td><span class="sample" style="background:#2F5755;color:#E0D9D9">Aa</span></td><td>Mist on Deep teal</td><td class="num">5.77</td><td class="v">✓ Button text</td></tr>
+        <tr><td><span class="sample" style="background:#432323;color:#7DB3AD">Aa</span></td><td>Sage light on Walnut</td><td class="num">5.94</td><td class="v">✓ Dark-mode links</td></tr>
+        <tr><td><span class="sample" style="background:#432323;color:#5A9690">Aa</span></td><td>Sage teal on Walnut</td><td class="num">4.12</td><td class="v">△ Large text and icons only</td></tr>
+        <tr><td><span class="sample" style="background:#E0D9D9;color:#5A9690">Aa</span></td><td>Sage teal on Mist</td><td class="num">2.43</td><td class="v">✕ Fills only</td></tr>
+        <tr><td><span class="sample" style="background:#432323;color:#2F5755">Aa</span></td><td>Deep teal on Walnut</td><td class="num">1.74</td><td class="v">✕ Surfaces only</td></tr>
+        <tr><td><span class="sample" style="background:#E0D9D9;color:#BF092F">Aa</span></td><td>Crimson on Mist</td><td class="num">4.58</td><td class="v">✓ Light-mode errors</td></tr>
+        <tr><td><span class="sample" style="background:#432323;color:#BF092F">Aa</span></td><td>Crimson on Walnut</td><td class="num">2.19</td><td class="v">✕ Use #F08A9C (5.87)</td></tr>
+      </tbody>
+    </table></div>
+  </section>
+
+  <section class="sheet">
+    <div class="row"><header style="display:grid;gap:8px"><span class="eyebrow">06 · Tokens</span><h2>CSS variables</h2></header>
+      <button class="btn-copy" id="copy-tokens">Copy tokens</button></div>
+<pre id="tokens">:root {
+  --canvas: #E0D9D9;  --page: #F7F4F4;  --surface: #EEE9E9;
+  --text: #432323;    --primary: #2F5755; --on-primary: #E0D9D9;
+  --accent: #2F5755;  --accent-subtle: rgb(90 150 144 / .22);
+  --error: #BF092F;   --warning: #844C00; --success: #1F6363; --info: #16476A;
+}
+.dark {
+  --canvas: #432323;  --page: #F7F4F4;  --surface: #523030;
+  --text: #E0D9D9;    --primary: #2F5755; --on-primary: #E0D9D9;
+  --accent: #7DB3AD;  --accent-subtle: #2F5755;
+  --error: #F08A9C;   --warning: #E0A030; --success: #5FBDBD; --info: #8DBBE0;
+}</pre>
+  </section>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement, btns = document.querySelectorAll('.seg button');
+  function apply(t) {
+    if (t === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', t);
+    btns.forEach(function (b) { b.setAttribute('aria-pressed', String(b.dataset.t === t)); });
+    try { localStorage.setItem('ll-theme', t); } catch (e) {}
+  }
+  var saved = 'system'; try { saved = localStorage.getItem('ll-theme') || 'system'; } catch (e) {}
+  apply(saved);
+  btns.forEach(function (b) { b.addEventListener('click', function () { apply(b.dataset.t); }); });
+
+  function copy(text, el) {
+    function ok() { el.classList.add('done'); setTimeout(function () { el.classList.remove('done'); }, 1400); }
+    function fallback() { var r = document.createRange(); r.selectNodeContents(el.tagName === 'BUTTON' && el.id ? document.getElementById('tokens') : el); var s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+    try { navigator.clipboard.writeText(text).then(ok, fallback); } catch (e) { fallback(); }
+  }
+  document.querySelectorAll('.copy').forEach(function (c) { c.addEventListener('click', function () { copy(c.dataset.c, c); }); });
+  var tb = document.getElementById('copy-tokens');
+  tb.addEventListener('click', function () {
+    var t = document.getElementById('tokens').textContent;
+    try { navigator.clipboard.writeText(t).then(function () { tb.textContent = 'Copied'; setTimeout(function () { tb.textContent = 'Copy tokens'; }, 1400); }, function () { copy(t, tb); }); } catch (e) { copy(t, tb); }
+  });
+})();
+</script>

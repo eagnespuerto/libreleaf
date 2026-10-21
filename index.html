@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>LibreLeaf Word Count</title>
+<meta name="description" content="LibreLeaf v0.0.1 alpha: a free, private, TeXCount-style word counter for LaTeX papers. The LaTeX word processor for independent researchers.">
+<link rel="icon" href="docs/brand/favicon/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
+<link rel="icon" href="docs/brand/favicon/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="docs/brand/favicon/favicon-light.ico" sizes="16x16 32x32 48x48">
+<link rel="apple-touch-icon" href="docs/brand/favicon/favicon-light-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Red+Hat+Display:wght@400;500;600;700&family=Red+Hat+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --canvas: #E0D9D9; --page: #F7F4F4; --surface: #EEE9E9; --text: #432323; --muted: #6E5050; --rule: #CFC5C5;
+  --primary: #2F5755; --on-primary: #E0D9D9; --accent: #2F5755; --tint: rgba(90,150,144,.22);
+  --error: #BF092F; --warning: #844C00; --success: #1F6363; --info: #16476A;
+  --error-bg: rgba(191,9,47,.10); --warning-bg: rgba(224,160,48,.20); --success-bg: rgba(59,151,151,.16);
+  --bar: #5A9690; --shadow: rgba(67,35,35,.14);
+  --f-display: "Playfair Display", Georgia, serif;
+  --f-ui: "Red Hat Display", "Segoe UI", system-ui, sans-serif;
+  --f-mono: "Red Hat Mono", ui-monospace, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root {
+  --canvas: #432323; --page: #4C2929; --surface: #523030; --text: #E0D9D9; --muted: #BFAEAE; --rule: #6A4545;
+  --primary: #2F5755; --on-primary: #E0D9D9; --accent: #7DB3AD; --tint: #2F5755;
+  --error: #F08A9C; --warning: #E0A030; --success: #5FBDBD; --info: #8DBBE0;
+  --error-bg: rgba(240,138,156,.14); --warning-bg: rgba(224,160,48,.14); --success-bg: rgba(95,189,189,.14);
+  --bar: #7DB3AD; --shadow: rgba(0,0,0,.35); color-scheme: dark; } }
+
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body { background: var(--canvas); color: var(--text); font: 16px/1.55 var(--f-ui); }
+.wrap { max-width: 1200px; margin: 0 auto; padding-block: 24px 64px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; gap: 32px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 600; margin: 0; text-wrap: balance; }
+p { margin: 0; max-width: 65ch; }
+a { color: var(--accent); }
+code, pre, textarea { font-family: var(--f-mono); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.eyebrow { font-weight: 600; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+
+/* hero */
+.hero { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero picture img { width: 100%; height: auto; display: block; margin: -18% 0; }
+.hero .name { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
+.hero h1 { font-family: var(--f-ui); font-weight: 500; font-size: clamp(2.4rem, 6vw, 3.6rem); color: var(--accent); line-height: 1; }
+.badge { font: 600 .78rem var(--f-ui); letter-spacing: .06em; text-transform: uppercase; background: var(--primary); color: var(--on-primary); border-radius: 999px; padding: 4px 12px; }
+.tagline { font-family: var(--f-display); font-style: italic; font-size: 1.25rem; margin-top: 4px; }
+.hero .intro { margin-top: 14px; display: grid; gap: 10px; }
+
+/* tool */
+.tool { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.panel { background: var(--page); border: 1.5px solid var(--text); border-radius: 4px 10px 6px 12px; box-shadow: 5px 5px 0 -1.5px var(--surface), 5px 5px 0 0 var(--text), 0 14px 32px var(--shadow); min-width: 0; display: grid; }
+.ribbon { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; padding: 10px 12px; background: var(--surface); border-bottom: 1px solid var(--rule); border-radius: 4px 10px 0 0; }
+.ribbon .label { margin-right: auto; font-weight: 600; }
+.btn { font: 600 .85rem var(--f-ui); border-radius: 999px; padding: 7px 14px; cursor: pointer; border: 1.5px solid var(--primary); background: transparent; color: var(--accent); }
+.btn.primary { background: var(--primary); color: var(--on-primary); }
+.btn:hover { background: var(--tint); }
+.btn.primary:hover { filter: brightness(1.12); background: var(--primary); }
+textarea { width: 100%; min-height: 520px; resize: vertical; border: 0; background: var(--page); color: var(--text); padding: 16px; font-size: .86rem; line-height: 1.6; border-radius: 0 0 6px 12px; }
+textarea:focus-visible { outline-offset: -2px; }
+.drop { outline: 3px dashed var(--accent); outline-offset: -8px; }
+.filename { font-size: .8rem; color: var(--muted); padding: 6px 16px; border-top: 1px solid var(--rule); }
+
+.results { padding: 20px; gap: 18px; }
+.sum { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.sum .n { font-family: var(--f-display); font-weight: 700; font-size: clamp(3rem, 8vw, 4.4rem); line-height: 1; font-variant-numeric: tabular-nums lining-nums; }
+.sum .l { font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 18px; margin: 0; }
+.stats div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; }
+.stats dt { color: var(--muted); }
+.stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.limit { display: grid; gap: 8px; }
+.limit label { font-weight: 600; font-size: .9rem; }
+.limit .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+.limit input, .limit select { font: 500 .9rem var(--f-ui); color: var(--text); background: var(--surface); border: 1.5px solid var(--rule); border-radius: 6px; padding: 6px 10px; }
+.limit input { width: 7.5em; font-variant-numeric: tabular-nums; }
+.meter { height: 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--rule); overflow: hidden; }
+.meter i { display: block; height: 100%; width: 0; background: var(--bar); transition: width .2s; }
+.meter.warn i { background: var(--warning); } .meter.over i { background: var(--error); }
+.msg { display: flex; gap: 8px; padding: 8px 12px; border-radius: 6px; border-left: 4px solid currentColor; font-size: .9rem; }
+.msg span { color: var(--text); }
+.msg.ok { color: var(--success); background: var(--success-bg); }
+.msg.warn { color: var(--warning); background: var(--warning-bg); }
+.msg.over { color: var(--error); background: var(--error-bg); }
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .88rem; }
+th, td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font: 600 .7rem var(--f-ui); letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; }
+.note { font-size: .82rem; color: var(--muted); }
+
+/* info */
+.info { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.card { background: var(--page); border: 1.5px solid var(--text); border-radius: 6px; padding: 22px; display: grid; gap: 12px; align-content: start; min-width: 0; }
+.card ul { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; }
+pre { margin: 0; background: var(--surface); border: 1px solid var(--rule); border-radius: 6px; padding: 12px 14px; overflow-x: auto; font-size: .82rem; }
+footer { display: flex; gap: 8px 20px; flex-wrap: wrap; font-size: .88rem; color: var(--muted); border-top: 1.5px solid var(--text); padding-top: 16px; }
+footer a { color: var(--text); }
+
+@media (max-width: 900px) {
+  .tool, .info { grid-template-columns: 1fr; }
+  textarea { min-height: 340px; }
+}
+@media (max-width: 600px) {
+  .hero { grid-template-columns: 1fr; }
+  .hero picture { max-width: 220px; margin: 0 auto; }
+  .stats { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="hero">
+    <picture>
+      <source srcset="docs/brand/logo/libreleaf-logo-dark.png" media="(prefers-color-scheme: dark)">
+      <img src="docs/brand/logo/libreleaf-logo-deepteal.png" alt="LibreLeaf logo: hand-drawn stack of papers with a teal leaf" width="2000" height="2000">
+    </picture>
+    <div>
+      <div class="name"><h1>LibreLeaf</h1><span class="badge">v0.0.1 alpha</span></div>
+      <p class="tagline">The LaTeX word processor for independent researchers</p>
+      <div class="intro">
+        <p>LibreLeaf will be a free, open-source LaTeX editor that you use like a word processor. The editor isn't built yet. This first release is its word counter, which follows the same rules as TeXCount.</p>
+        <p class="note">Your file stays on your computer. Counting happens in this page, and nothing is uploaded.</p>
+      </div>
+    </div>
+  </header>
+
+  <main class="tool">
+    <section class="panel" aria-label="LaTeX source">
+      <div class="ribbon">
+        <span class="label">LaTeX source</span>
+        <button class="btn primary" id="open">Open .tex file</button>
+        <button class="btn" id="example">Load example</button>
+        <button class="btn" id="clear">Clear</button>
+        <input type="file" id="file" accept=".tex,.ltx,.latex,text/x-tex,text/plain" hidden>
+      </div>
+      <textarea id="src" spellcheck="false" aria-label="Paste your LaTeX here"></textarea>
+      <div class="filename" id="filename">Example paper. Paste your own LaTeX, open a .tex file, or drop one here.</div>
+    </section>
+
+    <section class="panel results" aria-live="polite" aria-label="Word count">
+      <div class="sum"><span class="n" id="sum">0</span><span class="l">words</span></div>
+      <p class="note">Text, headings and captions together: TeXCount's "sum count".</p>
+      <dl class="stats" id="stats"></dl>
+
+      <div class="limit">
+        <label for="limit">Word limit</label>
+        <div class="row">
+          <input id="limit" type="number" min="0" step="50" placeholder="e.g. 1000">
+          <select id="limitWhat" aria-label="What the limit applies to">
+            <option value="sum">text + headings + captions</option>
+            <option value="text">text only</option>
+            <option value="textNoAbstract">text, without the abstract</option>
+          </select>
+        </div>
+        <div class="meter" id="meter" hidden><i></i></div>
+        <div class="msg" id="limitMsg" hidden></div>
+      </div>
+
+      <div>
+        <h3 style="font-size:1.05rem;margin-bottom:6px">By section</h3>
+        <div class="tablewrap"><table>
+          <thead><tr><th>Section</th><th class="num">Text</th><th class="num">Head.</th><th class="num">Capt.</th><th class="num">Maths</th></tr></thead>
+          <tbody id="sections"></tbody>
+        </table></div>
+      </div>
+      <div class="actions">
+        <button class="btn primary" id="copy">Copy TeXCount report</button>
+      </div>
+      <pre id="report" hidden></pre>
+    </section>
+  </main>
+
+  <section class="info">
+    <div class="card">
+      <h2 style="font-size:1.4rem">How words are counted</h2>
+      <ul>
+        <li>Only the document body counts, plus the <code>\title</code>.</li>
+        <li>Running text, headings and float captions are counted separately. Their total is the sum.</li>
+        <li>Maths counts as items (inline and displayed), not words.</li>
+        <li>Citations, references, labels, URLs, package setup and macro definitions are skipped. Link text in <code>\href</code> counts.</li>
+        <li>Verbatim, code listings, TikZ pictures, comments and the bibliography are skipped.</li>
+        <li>Footnotes count as text. The abstract counts as text and is also shown on its own.</li>
+        <li>Accents stay inside words, so <code>Erd\H{o}s</code> is one word.</li>
+      </ul>
+      <p class="note">Small differences from TeXCount are possible with unusual macros. Please report them on GitHub.</p>
+    </div>
+    <div class="card">
+      <h2 style="font-size:1.4rem">Use it from the command line</h2>
+      <p>Needs Node.js 18 or newer. It follows <code>\input</code> and <code>\include</code>.</p>
+<pre>node packages/texcount/texcount.js main.tex
+node packages/texcount/texcount.js main.tex --json</pre>
+      <h3 style="font-size:1.1rem">What's next</h3>
+      <p>The WYSIWYG editor with a Word-style ribbon, plain-language error help, and checks before you submit to arXiv. See the <a href="https://github.com/eagnespuerto/libreleaf/blob/main/docs/SPEC.md">spec</a> and the <a href="docs/brand/palette.html">brand palette</a>.</p>
+    </div>
+  </section>
+
+  <footer>
+    <span>LibreLeaf v0.0.1 alpha</span>
+    <a href="https://github.com/eagnespuerto/libreleaf">Source on GitHub</a>
+    <a href="https://github.com/eagnespuerto/libreleaf/issues">Report a problem</a>
+    <span>Free software, AGPL-3.0</span>
+    <span>By Ella Agnes Puerto</span>
+  </footer>
+</div>
+
+<script src="packages/texcount/texcount.js"></script>
+<script>
+(function () {
+  'use strict';
+  var EXAMPLE = [
+    '% Example paper. Replace it with your own LaTeX.',
+    '\\documentclass{article}',
+    '\\usepackage{amsmath,graphicx}',
+    '\\title{Period Changes in Three RR Lyrae Stars from Backyard Photometry}',
+    '\\author{A. Researcher}',
+    '\\begin{document}',
+    '\\maketitle',
+    '\\begin{abstract}',
+    'We report period changes in three RR Lyrae stars measured with a 20\\,cm',
+    'telescope over four seasons. All three show linear period drifts.',
+    '\\end{abstract}',
+    '',
+    '\\section{Introduction}',
+    'RR Lyrae stars pulsate with periods under a day, which makes them good',
+    'targets for small telescopes~\\cite{smith2021}. Their period $P$ changes',
+    'slowly as the star evolves, as described in Section~\\ref{sec:method}.',
+    '',
+    '\\section{Method}\\label{sec:method}',
+    'We fitted times of maximum light with a linear ephemeris,',
+    '\\begin{equation}',
+    '  T_{\\max}(E) = T_0 + P\\,E + \\tfrac{1}{2}\\,\\dot{P}P\\,E^2 ,',
+    '\\end{equation}',
+    'where $E$ is the cycle number.\\footnote{Data are on Zenodo.}',
+    '',
+    '\\begin{figure}[htbp]',
+    '  \\centering',
+    '  \\includegraphics[width=\\linewidth]{oc-diagram.pdf}',
+    '  \\caption{O$-$C diagram for the three stars.}',
+    '  \\label{fig:oc}',
+    '\\end{figure}',
+    '',
+    '\\section{Results}',
+    'Figure~\\ref{fig:oc} shows the O$-$C residuals. Two stars lengthen their',
+    'periods and one shortens, in line with horizontal-branch models.',
+    '',
+    '\\bibliographystyle{aasjournal}',
+    '\\bibliography{refs}',
+    '\\end{document}'
+  ].join('\n');
+
+  var $ = function (id) { return document.getElementById(id); };
+  var src = $('src'), last = null, timer = null;
+  var LABELS = [['text', 'Words in text'], ['headerWords', 'Words in headings'], ['captionWords', 'Words in captions'], ['abstractWords', 'Words in abstract'],
+    ['headers', 'Headings'], ['floats', 'Figures and tables'], ['inlineMath', 'Inline maths'], ['displayMath', 'Displayed maths']];
+
+  function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+  function render() {
+    var r = last = LibreTeXCount.count(src.value);
+    $('sum').textContent = r.sum.toLocaleString();
+    $('stats').innerHTML = LABELS.map(function (l) { return '<div><dt>' + l[1] + '</dt><dd>' + r[l[0]].toLocaleString() + '</dd></div>'; }).join('');
+    $('sections').innerHTML = r.sections.map(function (s) {
+      return '<tr><td>' + esc(s.title.replace(/^(Part|Chapter|Section): /, '')) + '</td><td class="num">' + s.text + '</td><td class="num">' + s.headerWords + '</td><td class="num">' + s.captionWords + '</td><td class="num">' + (s.inlineMath + s.displayMath) + '</td></tr>';
+    }).join('');
+    renderLimit();
+  }
+
+  function renderLimit() {
+    var limit = parseInt($('limit').value, 10), meter = $('meter'), msg = $('limitMsg');
+    if (!last || !(limit > 0)) { meter.hidden = true; msg.hidden = true; return; }
+    var what = $('limitWhat').value;
+    var n = what === 'sum' ? last.sum : what === 'text' ? last.text : last.text - last.abstractWords;
+    var pct = n / limit, state = pct > 1 ? 'over' : pct >= 0.9 ? 'warn' : 'ok';
+    meter.hidden = false; msg.hidden = false;
+    meter.className = 'meter' + (state === 'ok' ? '' : ' ' + state);
+    meter.firstElementChild.style.width = Math.min(100, pct * 100) + '%';
+    msg.className = 'msg ' + state;
+    var diff = Math.abs(limit - n).toLocaleString();
+    msg.innerHTML = state === 'over'
+      ? '<b>✕</b><span><b>Over the limit</b> by ' + diff + ' words (' + n.toLocaleString() + ' of ' + limit.toLocaleString() + ').</span>'
+      : state === 'warn'
+        ? '<b>!</b><span><b>Close to the limit:</b> ' + diff + ' words left.</span>'
+        : '<b>✓</b><span><b>Within the limit:</b> ' + diff + ' words left.</span>';
+  }
+
+  function schedule() { clearTimeout(timer); timer = setTimeout(render, 150); }
+
+  function loadFile(f) {
+    if (!f) return;
+    var reader = new FileReader();
+    reader.onload = function () { src.value = reader.result; $('filename').textContent = f.name + ' · ' + (f.size / 1024).toFixed(1) + ' KB · \\input files are not followed in the browser'; render(); };
+    reader.readAsText(f);
+  }
+
+  src.addEventListener('input', function () { $('filename').textContent = 'Edited text'; schedule(); });
+  $('open').addEventListener('click', function () { $('file').click(); });
+  $('file').addEventListener('change', function (e) { loadFile(e.target.files[0]); e.target.value = ''; });
+  $('example').addEventListener('click', function () { src.value = EXAMPLE; $('filename').textContent = 'Example paper (sample text).'; render(); });
+  $('clear').addEventListener('click', function () { src.value = ''; $('filename').textContent = 'Paste your LaTeX, open a .tex file, or drop one here.'; render(); src.focus(); });
+  $('limit').addEventListener('input', renderLimit);
+  $('limitWhat').addEventListener('change', renderLimit);
+  src.addEventListener('dragover', function (e) { e.preventDefault(); src.classList.add('drop'); });
+  src.addEventListener('dragleave', function () { src.classList.remove('drop'); });
+  src.addEventListener('drop', function (e) { e.preventDefault(); src.classList.remove('drop'); loadFile(e.dataTransfer.files[0]); });
+  $('copy').addEventListener('click', function () {
+    var btn = this, text = LibreTeXCount.formatReport(last);
+    function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy TeXCount report'; }, 1400); }
+    function fallback() {
+      var pre = $('report'); pre.textContent = text; pre.hidden = false;
+      var range = document.createRange(); range.selectNodeContents(pre);
+      var sel = getSelection(); sel.removeAllRanges(); sel.addRange(range);
+      btn.textContent = 'Press Ctrl+C to copy';
+    }
+    try { navigator.clipboard.writeText(text).then(done, fallback); } catch (e) { fallback(); }
+  });
+
+  src.value = EXAMPLE;
+  render();
+})();
+</script>
+</body>
+</html>
