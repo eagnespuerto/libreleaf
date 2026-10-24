@@ -4,6 +4,13 @@
 
 # LibreLeaf
 
+[![license](https://img.shields.io/badge/license-AGPL--3.0-blue)](LICENSE)
+[![release](https://img.shields.io/github/v/release/eagnespuerto/libreleaf?include_prereleases&sort=semver)](https://github.com/eagnespuerto/libreleaf/releases/latest)
+[![made with](https://img.shields.io/badge/made%20with-HTML5-E34F26?logo=html5&logoColor=white)](https://github.com/eagnespuerto/libreleaf)
+[![website](https://img.shields.io/badge/website-live-brightgreen)](https://eagnespuerto.github.io/libreleaf/)
+[![Ko-fi](https://img.shields.io/badge/Ko--fi-support%20me-FF5E5B?logo=kofi&logoColor=white)](https://ko-fi.com/eagnespuerto)
+[![Linktree](https://img.shields.io/badge/Linktree-soitsagnes-43E55E?logo=linktree&logoColor=white)](https://linktr.ee/soitsagnes)
+
 **The LaTeX word processor for independent researchers.**
 
 LibreLeaf is a free, open-source LaTeX editor that you use like a word
