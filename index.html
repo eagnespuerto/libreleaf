@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>LibreLeaf Word Count</title>
-<meta name="description" content="LibreLeaf v0.0.1 alpha: a free, private, TeXCount-style word counter for LaTeX papers. The LaTeX word processor for independent researchers.">
+<meta name="description" content="LibreLeaf v0.0.2 alpha: a free, private, TeXCount-style word counter for LaTeX papers. The LaTeX word processor for independent researchers.">
 <link rel="icon" href="docs/brand/favicon/favicon-light.svg" type="image/svg+xml" media="(prefers-color-scheme: light)">
 <link rel="icon" href="docs/brand/favicon/favicon-dark.svg" type="image/svg+xml" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="docs/brand/favicon/favicon-light.ico" sizes="16x16 32x32 48x48">
@@ -45,7 +45,7 @@ code, pre, textarea { font-family: var(--f-mono); }
 .eyebrow { font-weight: 600; font-size: .74rem; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
 
 /* hero */
-.hero { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: 28px; align-items: center; }
+.hero { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 28px; align-items: center; }
 .hero picture img { width: 100%; height: auto; display: block; }
 .hero .name { display: flex; align-items: baseline; gap: 14px; flex-wrap: wrap; }
 .hero h1 { font-family: var(--f-ui); font-weight: 500; font-size: clamp(2.4rem, 6vw, 3.6rem); color: var(--accent); line-height: 1; }
@@ -75,6 +75,11 @@ textarea:focus-visible { outline-offset: -2px; }
 .stats div { display: flex; justify-content: space-between; gap: 8px; padding: 7px 0; border-bottom: 1px solid var(--rule); font-size: .92rem; }
 .stats dt { color: var(--muted); }
 .stats dd { margin: 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.opts { display: flex; gap: 6px 16px; flex-wrap: wrap; align-items: center; font-size: .9rem; border: 0; padding: 0; margin: 0; }
+.opts legend { font-weight: 600; padding: 0; margin-right: 4px; float: left; }
+.opts label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.opts input { accent-color: var(--primary); width: 16px; height: 16px; margin: 0; }
+.selcount { font-size: .9rem; padding: 6px 12px; border-radius: 6px; background: var(--tint); }
 .limit { display: grid; gap: 8px; }
 .limit label { font-weight: 600; font-size: .9rem; }
 .limit .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
@@ -110,7 +115,7 @@ footer a { color: var(--text); }
 }
 @media (max-width: 600px) {
   .hero { grid-template-columns: 1fr; }
-  .hero picture { max-width: 220px; margin: 0 auto; }
+  .hero picture { max-width: 260px; margin: 0 auto; }
   .stats { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) { .meter i { transition: none; } }
@@ -124,7 +129,7 @@ footer a { color: var(--text); }
       <img src="docs/brand/logo/libreleaf-logo-deepteal.png" alt="LibreLeaf logo: hand-drawn stack of papers with a teal leaf" width="1467" height="901">
     </picture>
     <div>
-      <div class="name"><h1>LibreLeaf</h1><span class="badge">v0.0.1 alpha</span></div>
+      <div class="name"><h1>LibreLeaf</h1><span class="badge">v0.0.2 alpha</span></div>
       <p class="tagline">The LaTeX word processor for independent researchers</p>
       <div class="intro">
         <p>LibreLeaf will be a free, open-source LaTeX editor that you use like a word processor. The editor isn't built yet. This first release is its word counter, which follows the same rules as TeXCount.</p>
@@ -137,18 +142,26 @@ footer a { color: var(--text); }
     <section class="panel" aria-label="LaTeX source">
       <div class="ribbon">
         <span class="label">LaTeX source</span>
-        <button class="btn primary" id="open">Open .tex file</button>
+        <button class="btn primary" id="open">Open file or .zip</button>
+        <button class="btn" id="openDir">Open folder</button>
         <button class="btn" id="example">Load example</button>
         <button class="btn" id="clear">Clear</button>
-        <input type="file" id="file" accept=".tex,.ltx,.latex,text/x-tex,text/plain" hidden>
+        <input type="file" id="file" accept=".tex,.ltx,.latex,.zip,text/x-tex,text/plain,application/zip" multiple hidden>
+        <input type="file" id="dir" webkitdirectory multiple hidden>
       </div>
       <textarea id="src" spellcheck="false" aria-label="Paste your LaTeX here"></textarea>
-      <div class="filename" id="filename">Example paper. Paste your own LaTeX, open a .tex file, or drop one here.</div>
+      <div class="filename" id="filename">Example paper. Paste your own LaTeX, or open or drop a .tex file, a .zip or a project folder.</div>
     </section>
 
     <section class="panel results" aria-live="polite" aria-label="Word count">
       <div class="sum"><span class="n" id="sum">0</span><span class="l">words</span></div>
-      <p class="note">Text, headings and captions together: TeXCount's "sum count".</p>
+      <p class="note" id="sumNote">Text, headings and captions together: TeXCount's "sum count".</p>
+      <fieldset class="opts">
+        <legend>Leave out of the sum:</legend>
+        <label><input type="checkbox" id="noAbstract"> the abstract</label>
+        <label><input type="checkbox" id="noCaptions"> captions</label>
+      </fieldset>
+      <div class="selcount" id="selCount" hidden></div>
       <dl class="stats" id="stats"></dl>
 
       <div class="limit">
@@ -156,9 +169,8 @@ footer a { color: var(--text); }
         <div class="row">
           <input id="limit" type="number" min="0" step="50" placeholder="e.g. 1000">
           <select id="limitWhat" aria-label="What the limit applies to">
-            <option value="sum">text + headings + captions</option>
-            <option value="text">text only</option>
-            <option value="textNoAbstract">text, without the abstract</option>
+            <option value="sum">the sum above</option>
+            <option value="text">running text only</option>
           </select>
         </div>
         <div class="meter" id="meter" hidden><i></i></div>
@@ -188,23 +200,26 @@ footer a { color: var(--text); }
         <li>Maths counts as items (inline and displayed), not words.</li>
         <li>Citations, references, labels, URLs, package setup and macro definitions are skipped. Link text in <code>\href</code> counts.</li>
         <li>Verbatim, code listings, TikZ pictures, comments and the bibliography are skipped.</li>
-        <li>Footnotes count as text. The abstract counts as text and is also shown on its own.</li>
+        <li>Footnotes count as text. The abstract counts as text and is also shown on its own. You can leave it, or the captions, out of the sum.</li>
+        <li>Lines between <code>%TC:ignore</code> and <code>%TC:endignore</code> are skipped, as in TeXCount. To count one part only, select it in the box.</li>
+        <li>For a project with several files, open the folder or a .zip (an Overleaf download works). LibreLeaf finds the main file and follows <code>\input</code>, <code>\include</code> and <code>\import</code>.</li>
         <li>Accents stay inside words, so <code>Erd\H{o}s</code> is one word.</li>
       </ul>
       <p class="note">Small differences from TeXCount are possible with unusual macros. Please report them on GitHub.</p>
     </div>
     <div class="card">
       <h2 style="font-size:1.4rem">Use it from the command line</h2>
-      <p>Needs Node.js 18 or newer. It follows <code>\input</code> and <code>\include</code>.</p>
+      <p>Needs Node.js 18 or newer. Give it the main file or the project folder.</p>
 <pre>node packages/texcount/texcount.js main.tex
+node packages/texcount/texcount.js my-paper/ --no-abstract
 node packages/texcount/texcount.js main.tex --json</pre>
       <h3 style="font-size:1.1rem">What's next</h3>
-      <p>The WYSIWYG editor with a Word-style ribbon, plain-language error help, and checks before you submit to arXiv. See the <a href="https://github.com/eagnespuerto/libreleaf/blob/main/docs/SPEC.md">spec</a> and the <a href="docs/brand/palette.html">brand palette</a>.</p>
+      <p>The WYSIWYG editor with a Word-style ribbon, plain-language error help, and checks before you submit to arXiv, Zenodo, hexagonmath or RNAAS. See the <a href="https://github.com/eagnespuerto/libreleaf/blob/main/docs/SPEC.md">spec</a> and the <a href="docs/brand/palette.html">brand palette</a>.</p>
     </div>
   </section>
 
   <footer>
-    <span>LibreLeaf v0.0.1 alpha</span>
+    <span>LibreLeaf v0.0.2 alpha</span>
     <a href="https://github.com/eagnespuerto/libreleaf">Source on GitHub</a>
     <a href="https://github.com/eagnespuerto/libreleaf/issues">Report a problem</a>
     <span>Free software, AGPL-3.0</span>
@@ -213,6 +228,7 @@ node packages/texcount/texcount.js main.tex --json</pre>
 </div>
 
 <script src="packages/texcount/texcount.js"></script>
+<script src="packages/texcount/unzip.js"></script>
 <script>
 (function () {
   'use strict';
@@ -264,21 +280,40 @@ node packages/texcount/texcount.js main.tex --json</pre>
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
 
+  function options() { return { excludeAbstract: $('noAbstract').checked, excludeCaptions: $('noCaptions').checked }; }
+
+  function sumNote(o) {
+    if (o.excludeAbstract && o.excludeCaptions) return 'Text (without the abstract) and headings.';
+    if (o.excludeAbstract) return 'Text (without the abstract), headings and captions.';
+    if (o.excludeCaptions) return 'Text and headings, without captions.';
+    return 'Text, headings and captions together: TeXCount\'s "sum count".';
+  }
+
   function render() {
-    var r = last = LibreTeXCount.count(src.value);
+    var r = last = LibreTeXCount.count(src.value, options());
     $('sum').textContent = r.sum.toLocaleString();
+    $('sumNote').textContent = sumNote(r.options);
     $('stats').innerHTML = LABELS.map(function (l) { return '<div><dt>' + l[1] + '</dt><dd>' + r[l[0]].toLocaleString() + '</dd></div>'; }).join('');
     $('sections').innerHTML = r.sections.map(function (s) {
       return '<tr><td>' + esc(s.title.replace(/^(Part|Chapter|Section): /, '')) + '</td><td class="num">' + s.text + '</td><td class="num">' + s.headerWords + '</td><td class="num">' + s.captionWords + '</td><td class="num">' + (s.inlineMath + s.displayMath) + '</td></tr>';
     }).join('');
+    renderSelection();
     renderLimit();
+  }
+
+  // Count only the selected part, for journals that limit the main text.
+  function renderSelection() {
+    var box = $('selCount'), a = src.selectionStart, b = src.selectionEnd;
+    if (document.activeElement !== src || b - a < 2) { box.hidden = true; return; }
+    var r = LibreTeXCount.count(src.value.slice(a, b), options());
+    box.hidden = false;
+    box.textContent = 'Selected part: ' + r.sum.toLocaleString() + (r.sum === 1 ? ' word' : ' words') + ' (' + r.text.toLocaleString() + ' in text).';
   }
 
   function renderLimit() {
     var limit = parseInt($('limit').value, 10), meter = $('meter'), msg = $('limitMsg');
     if (!last || !(limit > 0)) { meter.hidden = true; msg.hidden = true; return; }
-    var what = $('limitWhat').value;
-    var n = what === 'sum' ? last.sum : what === 'text' ? last.text : last.text - last.abstractWords;
+    var n = $('limitWhat').value === 'text' ? last.text - (last.options.excludeAbstract ? last.abstractWords : 0) : last.sum;
     var pct = n / limit, state = pct > 1 ? 'over' : pct >= 0.9 ? 'warn' : 'ok';
     meter.hidden = false; msg.hidden = false;
     meter.className = 'meter' + (state === 'ok' ? '' : ' ' + state);
@@ -294,23 +329,111 @@ node packages/texcount/texcount.js main.tex --json</pre>
 
   function schedule() { clearTimeout(timer); timer = setTimeout(render, 150); }
 
-  function loadFile(f) {
-    if (!f) return;
-    var reader = new FileReader();
-    reader.onload = function () { src.value = reader.result; $('filename').textContent = f.name + ' · ' + (f.size / 1024).toFixed(1) + ' KB · \\input files are not followed in the browser'; render(); };
-    reader.readAsText(f);
+  // ---- Opening files, folders and .zip projects --------------------------
+  var TEX_RE = /\.(tex|ltx|latex)$/i;
+
+  function setStatus(text) { $('filename').textContent = text; }
+
+  // files: [{path, text}] with paths relative to the project.
+  function openProject(files, label) {
+    var map = Object.create(null);
+    files.forEach(function (f) { map[LibreTeXCount.normPath(f.path)] = f.text; });
+    var paths = Object.keys(map), read = function (p) { return p in map ? map[p] : null; };
+    if (!paths.length) { setStatus(label + ': no .tex files found.'); return; }
+    var main = LibreTeXCount.findMainFile(paths, read) || (paths.length === 1 ? paths[0] : null);
+    if (!main) { setStatus(label + ': no main file found (none has \\documentclass).'); return; }
+    var p = LibreTeXCount.expandInputs(main, read);
+    src.value = p.source;
+    var msg = p.files.length > 1
+      ? label + ': ' + main + ' and ' + (p.files.length - 1) + (p.files.length === 2 ? ' included file' : ' included files') + ', shown combined'
+      : label + ': ' + main;
+    if (p.missing.length) msg += ' · not found: ' + p.missing.join(', ');
+    else if (paths.length === 1 && /\\(input|include|subfile|import|subimport)\b/.test(p.source)) msg += ' · open the whole folder or a .zip to count its \\input files too';
+    setStatus(msg);
+    render();
   }
 
-  src.addEventListener('input', function () { $('filename').textContent = 'Edited text'; schedule(); });
+  function fail(err) { setStatus('Could not open: ' + (err && err.message || err)); }
+
+  // list: [{path, file}]
+  function openFiles(list) {
+    if (!list.length) return;
+    var zip = list.filter(function (e) { return /\.zip$/i.test(e.path); })[0];
+    if (zip) {
+      setStatus('Reading ' + zip.path + '…');
+      zip.file.arrayBuffer().then(function (buf) {
+        return LibreUnzip.readZip(buf, function (n) { return TEX_RE.test(n); });
+      }).then(function (entries) {
+        var dec = new TextDecoder();
+        openProject(entries.map(function (e) { return { path: e.name, text: dec.decode(e.data) }; }), zip.path);
+      }).catch(fail);
+      return;
+    }
+    var tex = list.filter(function (e) { return TEX_RE.test(e.path); });
+    if (!tex.length) { setStatus('No .tex files in what you opened.'); return; }
+    var root = list.length > 1 && list[0].path.indexOf('/') > 0 ? list[0].path.split('/')[0] + '/' : '';
+    var label = root || (tex.length === 1 ? tex[0].path : tex.length + ' files');
+    Promise.all(tex.map(function (e) { return e.file.text().then(function (text) { return { path: e.path, text: text }; }); }))
+      .then(function (files) { openProject(files, label); }).catch(fail);
+  }
+
+  function fromInput(input) {
+    return Array.prototype.map.call(input.files, function (f) { return { path: f.webkitRelativePath || f.name, file: f }; });
+  }
+
+  // Dropped folders arrive as FileSystemEntry trees.
+  function readEntry(entry) {
+    if (entry.isFile) {
+      return new Promise(function (ok) {
+        entry.file(function (f) { ok([{ path: entry.fullPath.replace(/^\//, ''), file: f }]); }, function () { ok([]); });
+      });
+    }
+    if (!entry.isDirectory || /^\./.test(entry.name) || entry.name === 'node_modules') return Promise.resolve([]);
+    var reader = entry.createReader(), all = [];
+    return new Promise(function (ok) {
+      (function next() {
+        reader.readEntries(function (batch) {
+          if (!batch.length) { Promise.all(all.map(readEntry)).then(function (lists) { ok([].concat.apply([], lists)); }); return; }
+          all = all.concat(Array.prototype.slice.call(batch));
+          next();
+        }, function () { ok([]); });
+      })();
+    });
+  }
+
+  function onDrop(e) {
+    e.preventDefault();
+    src.classList.remove('drop');
+    var items = e.dataTransfer.items, entries = [];
+    if (items && items.length && items[0].webkitGetAsEntry) {
+      for (var i = 0; i < items.length; i++) { var en = items[i].webkitGetAsEntry(); if (en) entries.push(en); }
+    }
+    if (entries.some(function (en) { return en.isDirectory; })) {
+      setStatus('Reading folder…');
+      Promise.all(entries.map(readEntry)).then(function (lists) { openFiles([].concat.apply([], lists)); }).catch(fail);
+    } else {
+      openFiles(Array.prototype.map.call(e.dataTransfer.files, function (f) { return { path: f.name, file: f }; }));
+    }
+  }
+
+  src.addEventListener('input', function () { setStatus('Edited text'); schedule(); });
   $('open').addEventListener('click', function () { $('file').click(); });
-  $('file').addEventListener('change', function (e) { loadFile(e.target.files[0]); e.target.value = ''; });
-  $('example').addEventListener('click', function () { src.value = EXAMPLE; $('filename').textContent = 'Example paper (sample text).'; render(); });
-  $('clear').addEventListener('click', function () { src.value = ''; $('filename').textContent = 'Paste your LaTeX, open a .tex file, or drop one here.'; render(); src.focus(); });
+  $('openDir').addEventListener('click', function () { $('dir').click(); });
+  $('file').addEventListener('change', function (e) { openFiles(fromInput(e.target)); e.target.value = ''; });
+  $('dir').addEventListener('change', function (e) { openFiles(fromInput(e.target)); e.target.value = ''; });
+  $('example').addEventListener('click', function () { src.value = EXAMPLE; setStatus('Example paper (sample text).'); render(); });
+  $('clear').addEventListener('click', function () { src.value = ''; setStatus('Paste your LaTeX, or open or drop a .tex file, a .zip or a project folder.'); render(); src.focus(); });
+  $('noAbstract').addEventListener('change', render);
+  $('noCaptions').addEventListener('change', render);
   $('limit').addEventListener('input', renderLimit);
   $('limitWhat').addEventListener('change', renderLimit);
+  document.addEventListener('selectionchange', renderSelection);
+  src.addEventListener('select', renderSelection);
+  src.addEventListener('blur', function () { $('selCount').hidden = true; });
   src.addEventListener('dragover', function (e) { e.preventDefault(); src.classList.add('drop'); });
   src.addEventListener('dragleave', function () { src.classList.remove('drop'); });
-  src.addEventListener('drop', function (e) { e.preventDefault(); src.classList.remove('drop'); loadFile(e.dataTransfer.files[0]); });
+  src.addEventListener('drop', onDrop);
+
   $('copy').addEventListener('click', function () {
     var btn = this, text = LibreTeXCount.formatReport(last);
     function done() { btn.textContent = 'Copied'; setTimeout(function () { btn.textContent = 'Copy TeXCount report'; }, 1400); }
