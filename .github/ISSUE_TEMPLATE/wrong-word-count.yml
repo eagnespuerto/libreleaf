@@ -1,0 +1,46 @@
+name: Wrong word count
+description: The word counter gives a different number from TeXCount, Overleaf or what you expected.
+title: "Wrong count: "
+labels: ["word counter", "accuracy"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting this. A short piece of LaTeX that shows the problem helps most.
+        Please don't paste a whole unpublished paper: cut it down to the part that counts wrongly.
+  - type: textarea
+    id: snippet
+    attributes:
+      label: LaTeX snippet
+      description: The smallest piece of LaTeX that shows the wrong count.
+      render: latex
+    validations:
+      required: true
+  - type: input
+    id: ours
+    attributes:
+      label: LibreLeaf's count
+      description: Which number, e.g. "Sum 12" or "Words in text 10".
+    validations:
+      required: true
+  - type: input
+    id: expected
+    attributes:
+      label: Expected count
+      description: What you expected, and where it comes from (TeXCount, Overleaf, counted by hand).
+    validations:
+      required: true
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where did you count?
+      options:
+        - Website
+        - Command line
+    validations:
+      required: true
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else
+      description: Options you used (for example "leave out the abstract"), or packages the document loads.

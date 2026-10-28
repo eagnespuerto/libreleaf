@@ -1,0 +1,16 @@
+name: Idea or request
+description: Suggest a feature, such as a journal's word-count rules or something for the editor.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: idea
+    attributes:
+      label: What would help you
+      description: Describe what you're trying to do. It's fine not to know how it should work.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Context
+      description: For example the journal or archive you're submitting to (arXiv, Zenodo, RNAAS…).
