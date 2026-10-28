@@ -40,15 +40,26 @@
     newenvironment: 3, renewenvironment: 3, newtheorem: 2, theoremstyle: 1,
     color: 1, textcolor: 1, colorbox: 1, fontsize: 2, linespread: 1, graphicspath: 1,
     pagestyle: 1, thispagestyle: 1, pagenumbering: 1, bibitem: 1, hypersetup: 1, geometry: 1,
-    rule: 2, raisebox: 1, resizebox: 2, scalebox: 1, captionsetup: 1, setcitestyle: 1,
+    rule: 2, raisebox: 1, parbox: 1, resizebox: 2, scalebox: 1, rotatebox: 1, captionsetup: 1, setcitestyle: 1,
+    author: 1, date: 1, hyphenation: 1, special: 1, typeout: 1, selectlanguage: 1, foreignlanguage: 1,
+    lstset: 1, lstinputlisting: 1, fancyhf: 1, lhead: 1, chead: 1, rhead: 1, lfoot: 1, cfoot: 1, rfoot: 1,
+    nolinkurl: 1, hyperlink: 1, hypertarget: 1, multicolumn: 2,
     definecolor: 3, newcounter: 1, numberwithin: 2, setbeamertemplate: 1
   };
 
   var DISPLAY_MATH_ENVS = toSet('equation equation* align align* gather gather* multline multline* eqnarray eqnarray* displaymath flalign flalign* alignat alignat* dmath dmath*');
-  var FLOAT_ENVS = toSet('figure figure* table table* wrapfigure wraptable sidewaysfigure sidewaystable subfigure subtable algorithm');
-  var IGNORE_ENVS = toSet('verbatim verbatim* Verbatim lstlisting minted comment tikzpicture pgfpicture thebibliography filecontents filecontents*');
+  // In floats only captions count; maths in the float body is not counted either.
+  var FLOAT_ENVS = toSet('figure figure* table table* float picture wrapfigure wraptable sidewaysfigure sidewaystable algorithm');
+  // TeXCount skips tabular and tabbing contents even outside floats.
+  var IGNORE_ENVS = toSet('verbatim verbatim* Verbatim lstlisting minted comment tikzpicture pgfpicture thebibliography filecontents filecontents* tabular tabular* tabbing titlepage lrbox alltt');
   // Environments that take mandatory arguments right after \begin{env}.
-  var ENV_ARGS = { tabular: 1, 'tabular*': 2, tabularx: 2, longtable: 1, array: 1, minipage: 1, multicols: 1, wrapfigure: 2, wraptable: 2, list: 2, subfigure: 1, subtable: 1 };
+  var ENV_ARGS = { tabularx: 2, longtable: 1, array: 1, minipage: 1, multicols: 1, wrapfigure: 2, wraptable: 2, list: 2, subfigure: 1, subtable: 1, spacing: 1, otherlanguage: 1, 'otherlanguage*': 1 };
+  // Citation macros whose optional arguments ("see", "p. 5") count as text, as in TeXCount.
+  var CITE_TEXT_OPTS = toSet('cite nocite citep citet citeauthor citeyear citeyearpar citealp citealt Citep Citet Citealp Citealt Citeauthor');
+  // Macros that print a word.
+  var WORD_MACROS = toSet('LaTeX TeX');
+  // Footnote-like text: counted outside the running text, with captions.
+  var NOTE_MACROS = toSet('footnote footnotetext marginpar endnote endnotetext thanks');
 
   var SPECIAL_LETTERS = { ss: 'ß', o: 'ø', O: 'Ø', ae: 'æ', AE: 'Æ', oe: 'œ', OE: 'Œ', aa: 'å', AA: 'Å', l: 'ł', L: 'Ł', i: 'i', j: 'j' };
   var WORD_RE = /[\p{L}\p{N}]+(?:['’.\-][\p{L}\p{N}]+)*/gu;
@@ -184,6 +195,12 @@
     else this.cur.otherWords += n;
   };
 
+  // Maths in a float body (outside its caption) isn't counted, as in TeXCount.
+  Counter.prototype.math = function (kind, mode) {
+    if (mode === 'float') return;
+    if (kind === 'inline') this.cur.inlineMath++; else this.cur.displayMath++;
+  };
+
   Counter.prototype.walk = function (s, mode) {
     var buf = '', i = 0, self = this;
     function flush() { if (buf) { self.addWords(buf, mode); buf = ''; } }
@@ -206,7 +223,7 @@
           flush();
           var endTok = next === '(' ? '\\)' : '\\]';
           var e = s.indexOf(endTok, i + 2);
-          if (next === '(') this.cur.inlineMath++; else this.cur.displayMath++;
+          this.math(next === '(' ? 'inline' : 'display', mode);
           i = e < 0 ? s.length : e + 2;
           continue;
         }
@@ -225,12 +242,12 @@
         flush();
         if (s[i + 1] === '$') {
           var d = s.indexOf('$$', i + 2);
-          this.cur.displayMath++;
+          this.math('display', mode);
           i = d < 0 ? s.length : d + 2;
         } else {
           var k = i + 1;
           while (k < s.length && !(s[k] === '$' && s[k - 1] !== '\\')) k++;
-          this.cur.inlineMath++;
+          this.math('inline', mode);
           i = k + 1;
         }
         continue;
@@ -276,17 +293,36 @@
       this.walk(arg[0], 'caption');
       return arg[1];
     }
-    if (name === 'footnote' || name === 'footnotetext' || name === 'thanks') {
+    if (NOTE_MACROS[name]) { // footnotes count as words outside the text, like captions
       i = skipOpts(s, i);
       arg = readArg(s, i);
-      this.walk(arg[0], mode === 'float' ? 'caption' : mode);
+      this.walk(arg[0], mode === 'header' ? 'header' : 'caption');
       return arg[1];
     }
+    if (WORD_MACROS[name]) { this.addWords(name, mode === 'float' ? 'other' : mode); return i; }
     if (name === 'ensuremath') {
-      this.cur.inlineMath++;
+      this.math('inline', mode);
       return readArg(s, i)[1];
     }
     if (name === 'href') { // \href{url}{text}: skip the URL, count the text
+      return skipArgs(s, i, 1);
+    }
+    if (name === 'url' && this.urlIsWord) { // with hyperref loaded, TeXCount counts a URL as one word
+      this.addWords('url', mode === 'float' ? 'other' : mode);
+      return skipArgs(s, i, 1);
+    }
+    if (name === 'texorpdfstring') { // \texorpdfstring{TeX}{PDF}: count the first
+      arg = readArg(s, i);
+      this.walk(arg[0], mode);
+      return readArg(s, arg[1])[1];
+    }
+    if (CITE_TEXT_OPTS[name]) { // \citep[see][p.~5]{key}: TeXCount counts the first option as text
+      var j2 = skipSpace(s, i);
+      if (s[j2] === '[') {
+        arg = readBalancedSquare(s, j2);
+        this.walk(arg[0], mode);
+        i = arg[1];
+      }
       return skipArgs(s, i, 1);
     }
     if (Object.prototype.hasOwnProperty.call(IGNORE_ARGS, name)) return skipArgs(s, i, IGNORE_ARGS[name]);
@@ -298,8 +334,8 @@
     var inner = s.slice(i, bounds[0]);
     var after = bounds[1];
     if (IGNORE_ENVS[env]) return after;
-    if (DISPLAY_MATH_ENVS[env]) { this.cur.displayMath++; return after; }
-    if (env === 'math') { this.cur.inlineMath++; return after; }
+    if (DISPLAY_MATH_ENVS[env]) { this.math('display', mode); return after; }
+    if (env === 'math') { this.math('inline', mode); return after; }
     var start = 0;
     if (FLOAT_ENVS[env] || ENV_ARGS[env]) {
       start = skipOpts(inner, 0);
@@ -312,6 +348,9 @@
       return after;
     }
     if (env === 'abstract') {
+      // TeXCount counts the "Abstract" heading as one heading and one heading word.
+      this.cur.headers++;
+      this.cur.headerWords++;
       var sec = this.cur, before = sec.text;
       this.walk(inner, mode);
       sec.abstractWords += sec.text - before;
@@ -323,24 +362,31 @@
 
   // The sum is text + headings + captions. Options can leave out the abstract
   // (journals that count the main text only) or the captions.
+  // mathAsWords counts each maths item as one word, like TeXCount's -sum.
   function sumOf(sec, opts) {
-    return sec.text - (opts.excludeAbstract ? sec.abstractWords : 0) + sec.headerWords + (opts.excludeCaptions ? 0 : sec.captionWords);
+    return sec.text - (opts.excludeAbstract ? sec.abstractWords : 0) + sec.headerWords + (opts.excludeCaptions ? 0 : sec.captionWords) +
+      (opts.mathAsWords ? sec.inlineMath + sec.displayMath : 0);
   }
 
   /**
    * Count words in a LaTeX source string.
    * @param {string} src LaTeX source
-   * @param {{excludeAbstract?: boolean, excludeCaptions?: boolean}} [options]
+   * @param {{excludeAbstract?: boolean, excludeCaptions?: boolean, mathAsWords?: boolean}} [options]
    * @returns {object} totals plus a per-section breakdown
    */
   function count(src, options) {
-    var opts = { excludeAbstract: !!(options && options.excludeAbstract), excludeCaptions: !!(options && options.excludeCaptions) };
+    var opts = {
+      excludeAbstract: !!(options && options.excludeAbstract),
+      excludeCaptions: !!(options && options.excludeCaptions),
+      mathAsWords: !!(options && options.mathAsWords)
+    };
     src = normaliseAccents(prepare(src));
     var counter = new Counter();
     var b = src.indexOf('\\begin{document}');
     var body = src;
     if (b >= 0) {
       var preamble = src.slice(0, b);
+      counter.urlIsWord = /\\usepackage\s*(\[[^\]]*\])?\s*\{[^}]*\bhyperref\b/.test(preamble);
       var t = preamble.search(/\\title\s*[\[{]/);
       if (t >= 0) counter.command('title', preamble, t + 6, 'text');
       body = src.slice(b + '\\begin{document}'.length);
@@ -473,8 +519,9 @@
     if (r.abstractWords) lines.push('Words in abstract (included in text): ' + r.abstractWords);
     var left = [];
     if (r.options && r.options.excludeAbstract) left.push('abstract');
-    if (r.options && r.options.excludeCaptions) left.push('captions');
+    if (r.options && r.options.excludeCaptions) left.push('captions and footnotes');
     if (left.length) lines.push('Left out of the sum: ' + left.join(', '));
+    if (r.options && r.options.mathAsWords) lines.push('Each maths item counts as one word in the sum (TeXCount -sum)');
     if (r.sections.length > 1) {
       lines.push('Subcounts:', '  text+headers+captions (#headers/#floats/#inlines/#displayed)');
       r.sections.forEach(function (s) {
@@ -502,12 +549,13 @@
         '  --json         print the result as JSON',
         '  --no-inputs    do not follow \\input, \\include and \\import',
         '  --no-abstract  leave the abstract out of the sum',
-        '  --no-captions  leave captions out of the sum',
+        '  --no-captions  leave captions and footnotes out of the sum',
+        '  --math-words   count each maths item as one word, like TeXCount -sum',
         'Lines between %TC:ignore and %TC:endignore are not counted.'
       ].join('\n'));
       process.exit(target ? 0 : 1);
     }
-    var opts = { excludeAbstract: has('--no-abstract'), excludeCaptions: has('--no-captions') };
+    var opts = { excludeAbstract: has('--no-abstract'), excludeCaptions: has('--no-captions'), mathAsWords: has('--math-words') };
     var abs = path.resolve(target), root, main;
     if (fs.statSync(abs).isDirectory()) {
       root = abs;

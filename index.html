@@ -155,11 +155,11 @@ footer a { color: var(--text); }
 
     <section class="panel results" aria-live="polite" aria-label="Word count">
       <div class="sum"><span class="n" id="sum">0</span><span class="l">words</span></div>
-      <p class="note" id="sumNote">Text, headings and captions together: TeXCount's "sum count".</p>
+      <p class="note" id="sumNote">Text, headings, and captions and footnotes, as TeXCount counts them.</p>
       <fieldset class="opts">
         <legend>Leave out of the sum:</legend>
         <label><input type="checkbox" id="noAbstract"> the abstract</label>
-        <label><input type="checkbox" id="noCaptions"> captions</label>
+        <label><input type="checkbox" id="noCaptions"> captions and footnotes</label>
       </fieldset>
       <div class="selcount" id="selCount" hidden></div>
       <dl class="stats" id="stats"></dl>
@@ -196,16 +196,16 @@ footer a { color: var(--text); }
       <h2 style="font-size:1.4rem">How words are counted</h2>
       <ul>
         <li>Only the document body counts, plus the <code>\title</code>.</li>
-        <li>Running text, headings and float captions are counted separately. Their total is the sum.</li>
+        <li>Running text, headings, and captions and footnotes are counted separately. Their total is the sum.</li>
         <li>Maths counts as items (inline and displayed), not words.</li>
         <li>Citations, references, labels, URLs, package setup and macro definitions are skipped. Link text in <code>\href</code> counts.</li>
-        <li>Verbatim, code listings, TikZ pictures, comments and the bibliography are skipped.</li>
-        <li>Footnotes count as text. The abstract counts as text and is also shown on its own. You can leave it, or the captions, out of the sum.</li>
+        <li>Verbatim, code listings, TikZ pictures, tables made with <code>tabular</code>, comments and the bibliography are skipped. In figures and tables, only the caption counts.</li>
+        <li>The abstract counts as text and is also shown on its own. You can leave it, or the captions and footnotes, out of the sum.</li>
         <li>Lines between <code>%TC:ignore</code> and <code>%TC:endignore</code> are skipped, as in TeXCount. To count one part only, select it in the box.</li>
         <li>For a project with several files, open the folder or a .zip (an Overleaf download works). LibreLeaf finds the main file and follows <code>\input</code>, <code>\include</code> and <code>\import</code>.</li>
         <li>Accents stay inside words, so <code>Erd\H{o}s</code> is one word.</li>
       </ul>
-      <p class="note">Small differences from TeXCount are possible with unusual macros. Please report them on GitHub.</p>
+      <p class="note">On 23 recent arXiv papers, 19 counts were within 1% of TeXCount's. The rest differ for <a href="https://github.com/eagnespuerto/libreleaf/blob/main/docs/texcount-comparison.md">known reasons</a>. If your count looks wrong, please report it on GitHub.</p>
     </div>
     <div class="card">
       <h2 style="font-size:1.4rem">Use it from the command line</h2>
@@ -275,7 +275,7 @@ node packages/texcount/texcount.js main.tex --json</pre>
 
   var $ = function (id) { return document.getElementById(id); };
   var src = $('src'), last = null, timer = null;
-  var LABELS = [['text', 'Words in text'], ['headerWords', 'Words in headings'], ['captionWords', 'Words in captions'], ['abstractWords', 'Words in abstract'],
+  var LABELS = [['text', 'Words in text'], ['headerWords', 'Words in headings'], ['captionWords', 'Captions and footnotes'], ['abstractWords', 'Words in abstract'],
     ['headers', 'Headings'], ['floats', 'Figures and tables'], ['inlineMath', 'Inline maths'], ['displayMath', 'Displayed maths']];
 
   function esc(s) { return String(s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -284,9 +284,9 @@ node packages/texcount/texcount.js main.tex --json</pre>
 
   function sumNote(o) {
     if (o.excludeAbstract && o.excludeCaptions) return 'Text (without the abstract) and headings.';
-    if (o.excludeAbstract) return 'Text (without the abstract), headings and captions.';
-    if (o.excludeCaptions) return 'Text and headings, without captions.';
-    return 'Text, headings and captions together: TeXCount\'s "sum count".';
+    if (o.excludeAbstract) return 'Text (without the abstract), headings, and captions and footnotes.';
+    if (o.excludeCaptions) return 'Text and headings, without captions and footnotes.';
+    return 'Text, headings, and captions and footnotes, as TeXCount counts them.';
   }
 
   function render() {
