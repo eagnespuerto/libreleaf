@@ -1,0 +1,20 @@
+name: Something else is broken
+description: A problem that isn't a wrong word count, such as a file that won't open or a page that looks wrong.
+labels: ["bug"]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, and what happened instead.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Browser or Node.js version
+      placeholder: e.g. Firefox 140 on Windows 11, or Node.js 22
+  - type: textarea
+    id: extra
+    attributes:
+      label: Screenshots or error messages
