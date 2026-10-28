@@ -18,7 +18,7 @@
 })(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
-  var VERSION = '0.0.1';
+  var VERSION = '0.0.2';
 
   // Heading macros and their level. Levels <= BREAKDOWN_LEVEL start a new
   // entry in the per-section breakdown.
@@ -31,7 +31,7 @@
     label: 1, ref: 1, eqref: 1, pageref: 1, autoref: 1, cref: 1, Cref: 1, nameref: 1, vref: 1,
     cite: 1, citep: 1, citet: 1, citealp: 1, citealt: 1, citeauthor: 1, citeyear: 1, citeyearpar: 1,
     parencite: 1, textcite: 1, autocite: 1, footcite: 1, nocite: 1, fullcite: 1,
-    includegraphics: 1, input: 1, include: 1, includeonly: 1, subfile: 1,
+    includegraphics: 1, input: 1, include: 1, includeonly: 1, subfile: 1, import: 2, subimport: 2,
     bibliography: 1, bibliographystyle: 1, addbibresource: 1, printbibliography: 0,
     usepackage: 1, RequirePackage: 1, documentclass: 1,
     url: 1, href: 1, doi: 1, email: 1, orcid: 1,
@@ -58,6 +58,22 @@
   function countWords(text) {
     var m = text.match(WORD_RE);
     return m ? m.length : 0;
+  }
+
+  // Drop everything between %TC:ignore and %TC:endignore lines, as TeXCount does.
+  function applyIgnoreMarkers(src) {
+    var out = [], skipping = false;
+    src.split('\n').forEach(function (line) {
+      if (/^\s*%\s*TC:ignore\b/.test(line)) { skipping = true; return; }
+      if (/^\s*%\s*TC:endignore\b/.test(line)) { skipping = false; return; }
+      if (!skipping) out.push(line);
+    });
+    return out.join('\n');
+  }
+
+  // Newlines, %TC:ignore blocks and comments: the clean-up every file gets.
+  function prepare(src) {
+    return stripComments(applyIgnoreMarkers(String(src).replace(/\r\n?/g, '\n')));
   }
 
   // Remove % comments, keeping escaped \%.
@@ -151,13 +167,12 @@
   }
 
   function newSection(title, level) {
-    return { title: title, level: level, text: 0, headerWords: 0, captionWords: 0, otherWords: 0, headers: 0, floats: 0, inlineMath: 0, displayMath: 0 };
+    return { title: title, level: level, text: 0, headerWords: 0, captionWords: 0, otherWords: 0, abstractWords: 0, headers: 0, floats: 0, inlineMath: 0, displayMath: 0 };
   }
 
   function Counter() {
     this.sections = [newSection('Front matter', -1)];
     this.cur = this.sections[0];
-    this.abstractWords = 0;
   }
 
   Counter.prototype.addWords = function (text, mode) {
@@ -297,24 +312,30 @@
       return after;
     }
     if (env === 'abstract') {
-      var before = this.cur.text;
+      var sec = this.cur, before = sec.text;
       this.walk(inner, mode);
-      this.abstractWords += this.cur.text - before;
+      sec.abstractWords += sec.text - before;
       return after;
     }
     this.walk(inner, mode);
     return after;
   };
 
-  function sumOf(sec) { return sec.text + sec.headerWords + sec.captionWords; }
+  // The sum is text + headings + captions. Options can leave out the abstract
+  // (journals that count the main text only) or the captions.
+  function sumOf(sec, opts) {
+    return sec.text - (opts.excludeAbstract ? sec.abstractWords : 0) + sec.headerWords + (opts.excludeCaptions ? 0 : sec.captionWords);
+  }
 
   /**
    * Count words in a LaTeX source string.
    * @param {string} src LaTeX source
+   * @param {{excludeAbstract?: boolean, excludeCaptions?: boolean}} [options]
    * @returns {object} totals plus a per-section breakdown
    */
-  function count(src) {
-    src = normaliseAccents(stripComments(String(src).replace(/\r\n?/g, '\n')));
+  function count(src, options) {
+    var opts = { excludeAbstract: !!(options && options.excludeAbstract), excludeCaptions: !!(options && options.excludeCaptions) };
+    src = normaliseAccents(prepare(src));
     var counter = new Counter();
     var b = src.indexOf('\\begin{document}');
     var body = src;
@@ -329,13 +350,112 @@
     counter.walk(body, 'text');
 
     var sections = counter.sections.filter(function (sec, idx) {
-      return idx > 0 || sumOf(sec) || sec.headers || sec.floats || sec.inlineMath || sec.displayMath;
+      return idx > 0 || sec.text || sec.headerWords || sec.captionWords || sec.headers || sec.floats || sec.inlineMath || sec.displayMath;
     }).map(function (sec) {
-      return Object.assign({}, sec, { sum: sumOf(sec) });
+      return Object.assign({}, sec, { sum: sumOf(sec, opts) });
     });
-    var total = { text: 0, headerWords: 0, captionWords: 0, otherWords: 0, headers: 0, floats: 0, inlineMath: 0, displayMath: 0 };
+    var total = { text: 0, headerWords: 0, captionWords: 0, otherWords: 0, abstractWords: 0, headers: 0, floats: 0, inlineMath: 0, displayMath: 0 };
     counter.sections.forEach(function (sec) { Object.keys(total).forEach(function (k) { total[k] += sec[k]; }); });
-    return Object.assign({ version: VERSION, sum: total.text + total.headerWords + total.captionWords, abstractWords: counter.abstractWords }, total, { sections: sections });
+    return Object.assign({ version: VERSION, sum: sumOf(total, opts), options: opts }, total, { sections: sections });
+  }
+
+  // ---- Multi-file projects -------------------------------------------------
+
+  // POSIX-style path helpers, so the same code runs on a folder in the
+  // browser, a .zip, or the file system.
+  function normPath(p) {
+    var out = [];
+    String(p).replace(/\\/g, '/').split('/').forEach(function (part) {
+      if (part === '' || part === '.') return;
+      if (part === '..') { if (out.length && out[out.length - 1] !== '..') out.pop(); else out.push('..'); }
+      else out.push(part);
+    });
+    return out.join('/');
+  }
+  function dirOf(p) { var i = p.lastIndexOf('/'); return i < 0 ? '' : p.slice(0, i); }
+  function joinPath(dir, name) { return normPath(dir ? dir + '/' + name : name); }
+
+  var INPUT_RE = /\\(input|include|subfile)(?![A-Za-z@])\s*(?:\{([^{}]*)\}|([^\s{}\\%]+))|\\(import|subimport|inputfrom|subinputfrom|includefrom|subincludefrom)\*?\s*\{([^{}]*)\}\s*\{([^{}]*)\}/g;
+
+  /**
+   * Inline \input, \include, \subfile and the import package's \import and
+   * \subimport, the way TeX finds them: paths are relative to the main file's
+   * folder (or to the \import folder), with .tex added when there's no
+   * extension. Each file has %TC:ignore blocks and comments removed first, so a
+   * commented-out \input isn't followed.
+   *
+   * @param {string} mainPath path of the main file, e.g. "paper/main.tex"
+   * @param {(path: string) => (string|null|undefined)} readFile returns a file's text, or null if it doesn't exist
+   * @returns {{source: string, files: string[], missing: string[]}}
+   */
+  function expandInputs(mainPath, readFile, options) {
+    var maxDepth = (options && options.maxDepth) || 20;
+    var files = [], missing = [];
+    mainPath = normPath(mainPath);
+    var rootDir = dirOf(mainPath);
+
+    function tryRead(candidates) {
+      for (var i = 0; i < candidates.length; i++) {
+        var text = readFile(candidates[i]);
+        if (text != null) return { path: candidates[i], text: text };
+      }
+      return null;
+    }
+    function withTex(p) { return /\.tex$/i.test(p) ? [p] : [p + '.tex', p]; }
+
+    function expand(path, text, base, stack, depth) {
+      files.push(path);
+      var src = prepare(text);
+      if (depth >= maxDepth) return src;
+      return src.replace(INPUT_RE, function (m, kind, braced, bare, ikind, idir, ifile) {
+        var name = (braced != null ? braced : bare != null ? bare : ifile || '').trim();
+        if (!name) return m;
+        var childBase = base, dirs;
+        if (ikind) {
+          var sub = /^sub/.test(ikind);
+          childBase = joinPath(sub ? dirOf(path) : rootDir, idir.trim());
+          dirs = [childBase];
+        } else {
+          dirs = [base, dirOf(path), rootDir].filter(function (d, i, a) { return a.indexOf(d) === i; });
+        }
+        var candidates = [];
+        dirs.forEach(function (d) { withTex(joinPath(d, name)).forEach(function (c) { if (candidates.indexOf(c) < 0) candidates.push(c); }); });
+        var hit = tryRead(candidates);
+        if (!hit) { if (missing.indexOf(name) < 0) missing.push(name); return m; }
+        if (stack.indexOf(hit.path) >= 0) return ' ';
+        var kindName = kind || ikind;
+        var body = expand(hit.path, hit.text, childBase, stack.concat(hit.path), depth + 1);
+        return kindName === 'include' ? '\n' + body + '\n' : ' ' + body + ' ';
+      });
+    }
+
+    var mainText = readFile(mainPath);
+    if (mainText == null) throw new Error('File not found: ' + mainPath);
+    var source = expand(mainPath, mainText, rootDir, [mainPath], 0);
+    return { source: source, files: files, missing: missing };
+  }
+
+  var MAIN_NAMES = ['main.tex', 'ms.tex', 'paper.tex', 'manuscript.tex', 'article.tex', 'thesis.tex'];
+
+  /**
+   * Pick the main .tex file from a list of paths: one with \documentclass and
+   * \begin{document}, preferring common names and then the shallowest path.
+   * @returns {string|null}
+   */
+  function findMainFile(paths, readFile) {
+    var best = null, bestScore = -Infinity;
+    paths.forEach(function (p) {
+      if (!/\.(tex|ltx|latex)$/i.test(p)) return;
+      var text = readFile(p);
+      if (text == null) return;
+      var src = stripComments(String(text));
+      var hasClass = /\\documentclass\b/.test(src), hasBody = /\\begin\s*\{document\}/.test(src);
+      if (!hasClass && !hasBody) return;
+      var name = p.split('/').pop().toLowerCase();
+      var score = (hasClass ? 100 : 0) + (hasBody ? 100 : 0) + (MAIN_NAMES.indexOf(name) >= 0 ? 20 : 0) - 5 * (normPath(p).split('/').length - 1);
+      if (score > bestScore || (score === bestScore && p < best)) { best = p; bestScore = score; }
+    });
+    return best;
   }
 
   /** Format a result the way TeXCount prints it. */
@@ -351,6 +471,10 @@
       'Number of math displayed: ' + r.displayMath
     ];
     if (r.abstractWords) lines.push('Words in abstract (included in text): ' + r.abstractWords);
+    var left = [];
+    if (r.options && r.options.excludeAbstract) left.push('abstract');
+    if (r.options && r.options.excludeCaptions) left.push('captions');
+    if (left.length) lines.push('Left out of the sum: ' + left.join(', '));
     if (r.sections.length > 1) {
       lines.push('Subcounts:', '  text+headers+captions (#headers/#floats/#inlines/#displayed)');
       r.sections.forEach(function (s) {
@@ -360,28 +484,59 @@
     return lines.join('\n');
   }
 
-  var api = { version: VERSION, count: count, formatReport: formatReport, countWords: countWords, stripComments: stripComments };
+  var api = {
+    version: VERSION, count: count, formatReport: formatReport, countWords: countWords, stripComments: stripComments,
+    expandInputs: expandInputs, findMainFile: findMainFile, normPath: normPath
+  };
 
-  // Command-line use: node texcount.js paper.tex [--json] [--no-inputs]
+  // Command-line use: node texcount.js paper.tex|folder [options]
   if (typeof require === 'function' && typeof module === 'object' && require.main === module) {
     var fs = require('fs'), path = require('path');
     var args = process.argv.slice(2);
-    var file = args.filter(function (a) { return a.charAt(0) !== '-'; })[0];
-    if (!file || args.indexOf('--help') >= 0) {
-      console.log('LibreLeaf TeXCount ' + VERSION + '\nUsage: node texcount.js main.tex [--json] [--no-inputs]\n  --json       print the result as JSON\n  --no-inputs  do not follow \\input and \\include');
-      process.exit(file ? 0 : 1);
+    var has = function (f) { return args.indexOf(f) >= 0; };
+    var target = args.filter(function (a) { return a.charAt(0) !== '-'; })[0];
+    if (!target || has('--help')) {
+      console.log([
+        'LibreLeaf TeXCount ' + VERSION,
+        'Usage: node texcount.js main.tex|folder [options]',
+        '  --json         print the result as JSON',
+        '  --no-inputs    do not follow \\input, \\include and \\import',
+        '  --no-abstract  leave the abstract out of the sum',
+        '  --no-captions  leave captions out of the sum',
+        'Lines between %TC:ignore and %TC:endignore are not counted.'
+      ].join('\n'));
+      process.exit(target ? 0 : 1);
     }
-    var expand = function (f, depth) {
-      var text = stripComments(fs.readFileSync(f, 'utf8'));
-      if (depth > 10 || args.indexOf('--no-inputs') >= 0) return text;
-      return text.replace(/\\(input|include)\s*\{([^}]+)\}/g, function (m, kind, name) {
-        var p = path.resolve(path.dirname(f), name.trim());
-        if (!path.extname(p)) p += '.tex';
-        return fs.existsSync(p) ? expand(p, depth + 1) : m;
-      });
+    var opts = { excludeAbstract: has('--no-abstract'), excludeCaptions: has('--no-captions') };
+    var abs = path.resolve(target), root, main;
+    if (fs.statSync(abs).isDirectory()) {
+      root = abs;
+      var all = [];
+      (function walkDir(d) {
+        fs.readdirSync(d, { withFileTypes: true }).forEach(function (e) {
+          var p = path.join(d, e.name);
+          if (e.isDirectory()) { if (e.name.charAt(0) !== '.' && e.name !== 'node_modules') walkDir(p); }
+          else all.push(path.relative(root, p).split(path.sep).join('/'));
+        });
+      })(root);
+      main = findMainFile(all, function (p) { return fs.readFileSync(path.join(root, p), 'utf8'); });
+      if (!main) { console.error('No main .tex file (with \\documentclass) found in ' + target); process.exit(1); }
+    } else {
+      root = path.dirname(abs);
+      main = path.basename(abs);
+    }
+    var readFile = function (p) {
+      var f = path.join(root, p);
+      try { return fs.statSync(f).isFile() ? fs.readFileSync(f, 'utf8') : null; } catch (e) { return null; }
     };
-    var result = count(expand(path.resolve(file), 0));
-    console.log(args.indexOf('--json') >= 0 ? JSON.stringify(result, null, 2) : formatReport(result));
+    var project = has('--no-inputs') ? { source: readFile(main), files: [main], missing: [] } : expandInputs(main, readFile);
+    var result = Object.assign(count(project.source, opts), { files: project.files, missing: project.missing });
+    if (has('--json')) console.log(JSON.stringify(result, null, 2));
+    else {
+      if (project.files.length > 1) console.error('Files: ' + project.files.join(', '));
+      if (project.missing.length) console.error('Not found: ' + project.missing.join(', '));
+      console.log(formatReport(result));
+    }
   }
 
   return api;
