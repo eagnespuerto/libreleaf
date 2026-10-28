@@ -25,19 +25,20 @@ nothing waits for the hosting decision until week 5.
 
 ## Week 1: v0.0.2, polish and a better word counter
 
-- [ ] **CI.** Run `gh auth refresh -s workflow`, then add a GitHub Actions
+- [x] **CI.** Run `gh auth refresh -s workflow`, then add a GitHub Actions
       workflow that runs `npm test` on every PR.
-- [ ] **Logo crop.** Trim the empty space around the logo PNGs so the logo in
+- [x] **Logo crop.** Trim the empty space around the logo PNGs so the logo in
       the page header shows at full size.
-- [ ] **Multi-file projects in the browser.** Open a folder or a .zip, and
+- [x] **Multi-file projects in the browser.** Open a folder or a .zip, and
       follow `\input`/`\include` the same way the command line does.
-- [ ] **Check against real TeXCount.** Run 20 or more real arXiv sources through
+- [x] **Check against real TeXCount.** Run 20 or more real arXiv sources through
       both TeXCount and our counter and record the differences. Fix the big ones
-      and list the rest in the README.
-- [ ] **More counter options.** Exclude the abstract or captions from the
+      and list the rest in the README. *(23 papers, 19 within 1%:
+      [texcount-comparison.md](texcount-comparison.md).)*
+- [x] **More counter options.** Exclude the abstract or captions from the
       sum. Count words in a selected part only (for journals that count
       "main text" only).
-- [ ] **Repo hygiene.** Issue templates ("wrong word count" asks for the .tex
+- [x] **Repo hygiene.** Issue templates ("wrong word count" asks for the .tex
       snippet), CONTRIBUTING.md, CODE_OF_CONDUCT.md.
 
 **Done when:** CI is green, the per-file differences are documented, and you
