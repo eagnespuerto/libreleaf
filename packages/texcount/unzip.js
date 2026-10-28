@@ -20,7 +20,15 @@
   }
 
   function inflate(bytes) {
-    var stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+    var ds;
+    try { ds = new DecompressionStream('deflate-raw'); } catch (e) {
+      // Node 18 lacks 'deflate-raw' in DecompressionStream; use zlib there.
+      if (typeof require === 'function') {
+        try { return Promise.resolve(new Uint8Array(require('zlib').inflateRawSync(bytes))); } catch (err) { return Promise.reject(err); }
+      }
+      return Promise.reject(new Error('This browser cannot unpack .zip files. Please open the folder instead.'));
+    }
+    var stream = new Blob([bytes]).stream().pipeThrough(ds);
     return new Response(stream).arrayBuffer().then(function (b) { return new Uint8Array(b); });
   }
 
