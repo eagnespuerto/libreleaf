@@ -16,6 +16,8 @@ export function countWords(latex: string): CountResult {
 
 /** The short summary shown in the status bar. */
 export function formatCount(r: CountResult): string {
-  // TODO(human): choose what the status bar shows. This default is a plain sum.
-  return `${r.sum.toLocaleString()} words`;
+  // abstractWords is already inside text, so it isn't added again.
+  const { sum, text, captionWords, headerWords } = r;
+  const n = (x: number) => x.toLocaleString();
+  return `${n(sum)} total words, ${n(text + captionWords)} words (using TeXCount), ${n(headerWords)} words in headings`;
 }
