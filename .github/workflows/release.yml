@@ -7,6 +7,9 @@ name: Desktop release
 on:
   push:
     tags: ['v*']
+  # Test-build (no release) when a PR touches the desktop app.
+  pull_request:
+    paths: ['apps/web/**', 'packages/**', '.github/workflows/release.yml', 'package-lock.json']
   workflow_dispatch:
 
 permissions:
