@@ -1,0 +1,86 @@
+name: Desktop release
+
+# Push a tag like v0.0.3 to build the desktop app for Windows, Linux and
+# Raspberry Pi OS (64-bit) and attach the installers to a draft pre-release.
+# Run it by hand (Actions > Desktop release > Run workflow) to test a build
+# without publishing anything.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Windows x64
+            os: windows-latest
+            bundles: nsis,msi
+          - name: Linux x64
+            os: ubuntu-22.04
+            bundles: deb,appimage,rpm
+          - name: Raspberry Pi OS arm64
+            os: ubuntu-22.04-arm
+            bundles: deb
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Linux build libraries
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: apps/web/src-tauri -> target
+
+      - run: npm ci
+
+      - name: Build and upload
+        uses: tauri-apps/tauri-action@v0
+        with:
+          projectPath: apps/web
+          args: --bundles ${{ matrix.bundles }}
+          tagName: ${{ github.ref_type == 'tag' && github.ref_name || '' }}
+          releaseName: LibreLeaf ${{ github.ref_name }}
+          releaseBody: |
+            Desktop draft of the LibreLeaf word processor. See CHANGELOG.md for what changed.
+
+            | System | File |
+            |---|---|
+            | Windows 10/11 (x64) | `*_x64-setup.exe` or `*_x64_en-US.msi` |
+            | Debian / Ubuntu (x64) | `*_amd64.deb` or `*_amd64.AppImage` |
+            | Fedora (x64) | `*.x86_64.rpm` |
+            | Raspberry Pi OS 64-bit (Pi 4, Pi 5, Pi 400) | `*_arm64.deb` |
+
+            The installers are not code-signed yet, so Windows SmartScreen will warn you. Click "More info", then "Run anyway".
+          releaseDraft: true
+          prerelease: true
+
+      - name: Keep the installers (manual runs)
+        if: github.ref_type != 'tag'
+        uses: actions/upload-artifact@v4
+        with:
+          name: libreleaf-${{ runner.os }}-${{ runner.arch }}
+          path: |
+            apps/web/src-tauri/target/release/bundle/**/*.exe
+            apps/web/src-tauri/target/release/bundle/**/*.msi
+            apps/web/src-tauri/target/release/bundle/**/*.deb
+            apps/web/src-tauri/target/release/bundle/**/*.rpm
+            apps/web/src-tauri/target/release/bundle/**/*.AppImage
+          if-no-files-found: error

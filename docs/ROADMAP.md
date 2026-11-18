@@ -12,7 +12,7 @@ collaboration. Every version is a branch, a PR and a tagged pre-release.
 | Week | Dates | Version | Theme | Depends on the hosting decision? |
 |---|---|---|---|---|
 | 1 | Oct 21–26 | v0.0.2 | Polish and a better word counter | No |
-| 2 | Oct 27–Nov 2 | — | Editor prototype and hosting research | No |
+| 2 | Oct 27–Nov 2 (done Nov 18) | v0.0.3 | Editor prototype and hosting research, draft word processor, desktop installers | No |
 | 3 | Nov 3–9 | v0.1.0 | **Decide where it runs.** Editor shell with ribbon | Decision made this week |
 | 4 | Nov 10–16 | v0.2.0 | Maths, citations, figures | No |
 | 5 | Nov 17–23 | v0.3.0 | Compile to PDF and preview it | **Yes** |
@@ -46,15 +46,21 @@ can open a folder and count it.
 
 ## Week 2: editor prototype and hosting research (no release)
 
-- [ ] **Prototype the document model (SPEC 0.2).** Build two throwaway versions:
+*Done 2026-11-18 as v0.0.3, about two weeks late. At the user's request it
+also ships a draft word processor and desktop installers for Windows, Linux
+and Raspberry Pi OS, pulling part of week 3 forward.*
+
+- [x] **Prototype the document model (SPEC 0.2).** Build two throwaway versions:
       option A (the LaTeX text is the master copy) and option C (a structured
       document as the master copy, with raw-LaTeX blocks kept as-is). Measure
       how well each one round-trips the week-1 arXiv set.
-      Record the result in `docs/adr/0001-doc-model.md`.
-- [ ] **Project scaffold.** pnpm workspace, Vite, React and TypeScript in
+      Record the result in `docs/adr/0001-doc-model.md`. *(Option C: 21/21
+      files byte-exact. The arXiv set wasn't on disk, so it used 21 local
+      papers; rerun on arXiv before v0.2.0.)*
+- [x] **Project scaffold.** *(npm workspaces, not pnpm.)* pnpm workspace, Vite, React and TypeScript in
       `apps/web`. The word counter becomes `packages/texcount`, published to the
       site as it is today.
-- [ ] **Hosting research.** Write `docs/adr/0002-deployment.md`, comparing the
+- [x] **Hosting research.** Write `docs/adr/0002-deployment.md`, comparing the
       options in the decision gate below. Prices, limits, and whether the
       compile sandbox is possible on each.
 
@@ -66,12 +72,13 @@ recommendation, and ADR 0002 sets out the choice.
 > **Decision gate: where does LibreLeaf run?** Settle ADR 0002 this week.
 > See the decision gate section below.
 
-- [ ] **Ribbon.** Built from Radix Tabs and Toolbar with shadcn styling. Home
+- [~] **Ribbon.** *(Draft in v0.0.3: Home, Insert and View tabs. Still to
+      do: collapse to one row, Alt+/ command search, Radix/shadcn.)* Built from Radix Tabs and Toolbar with shadcn styling. Home
       and Insert tabs work; the others show as "coming soon". It collapses to
       one row, and Alt+/ searches all commands.
 - [ ] **WYSIWYG page.** A Tiptap page on the canvas: headings, paragraphs,
       bold, italic and small caps, lists, footnotes.
-- [ ] **Live word count** in the status bar, using `packages/texcount`.
+- [x] **Live word count** in the status bar, using `packages/texcount`.
 - [ ] **Export .tex.** The LaTeX source is generated, shown in a read-only
       source view, and can be downloaded.
 - [ ] **Local saving.** Projects are saved in the browser (IndexedDB), with

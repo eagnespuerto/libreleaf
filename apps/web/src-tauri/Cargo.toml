@@ -1,0 +1,29 @@
+[package]
+name = "libreleaf"
+version = "0.0.3"
+description = "The LaTeX word processor for independent researchers"
+authors = ["Ella Agnes Puerto"]
+license = "AGPL-3.0-or-later"
+repository = "https://github.com/eagnespuerto/libreleaf"
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "libreleaf_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+
+# Small, fast binaries: this matters most on a Raspberry Pi.
+[profile.release]
+opt-level = "s"
+lto = true
+codegen-units = 1
+panic = "abort"
+strip = true

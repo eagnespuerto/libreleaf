@@ -20,9 +20,39 @@ like Google Docs, with a Word-style ribbon, and explains errors in plain
 language. Every feature is free, with no paywalls. The project is paid for by
 donations.
 
-> **Status: v0.0.2 alpha.** The editor isn't built yet. These first releases
-> are its word counter.
-> **Try it:** https://eagnespuerto.github.io/libreleaf/
+> **Status: v0.0.3 alpha.** A first draft of the word processor, for Windows,
+> Linux and Raspberry Pi OS: open a `.tex` file, edit it on a page, and save it
+> back. It can't compile to PDF yet. The word counter still runs in the browser.
+> **Download:** [Releases](https://github.com/eagnespuerto/libreleaf/releases)
+> · **Word counter:** https://eagnespuerto.github.io/libreleaf/
+
+## The word processor (draft)
+
+Download the installer for your system from
+[Releases](https://github.com/eagnespuerto/libreleaf/releases):
+
+| System | File |
+|---|---|
+| Windows 10/11 (x64) | `LibreLeaf_…_x64-setup.exe` or `.msi` |
+| Debian, Ubuntu, Mint (x64) | `LibreLeaf_…_amd64.deb` or `.AppImage` |
+| Fedora (x64) | `LibreLeaf-…x86_64.rpm` |
+| Raspberry Pi OS 64-bit, Bookworm or later (Pi 4, Pi 5, Pi 400) | `LibreLeaf_…_arm64.deb` |
+
+On a Pi: `sudo apt install ./LibreLeaf_0.0.3_arm64.deb`.
+
+What works now:
+
+- Open a `.tex` file and edit it on a page: sections, paragraphs, bold,
+  emphasis, small caps, lists and footnotes, from a Word-style ribbon.
+- Anything the editor doesn't understand yet (the preamble, maths, figures,
+  `\cite`) shows as LaTeX in a box, and you can edit it as text. Nothing is
+  lost: a file you open and save without changes comes back the same.
+- See the LaTeX it will save (View > LaTeX source), and a live word count.
+- Your draft is kept between sessions.
+
+How the editor stores documents is explained in
+[ADR 0001](docs/adr/0001-doc-model.md). Where it will compile is
+[ADR 0002](docs/adr/0002-deployment.md).
 
 ## The word counter
 
@@ -87,11 +117,19 @@ count `\cref` labels as words) is listed in the
 ### Development
 
 ```bash
-npm test
+npm install
+npm test            # word counter and doc-model tests
+npm run dev         # the editor in your browser, at http://localhost:5173
+npm run roundtrip -- path/to/projects   # ADR 0001 round-trip table
 ```
 
-The site is plain HTML served from the root of `main` by GitHub Pages. There's
-no build step.
+The desktop app needs [Rust](https://rustup.rs) and, on Linux,
+`libwebkit2gtk-4.1-dev`. Then, in `apps/web`: `npx tauri dev` or
+`npx tauri build`. Pushing a `v*` tag builds the installers for all three
+systems on GitHub Actions and attaches them to a draft release.
+
+The landing page and word counter are plain HTML served from the root of
+`main` by GitHub Pages, with no build step.
 
 ## Roadmap
 

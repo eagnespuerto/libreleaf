@@ -1,5 +1,29 @@
 # Changelog
 
+## v0.0.3 (alpha), 2026-11-18
+
+A first draft of the word processor, and desktop installers.
+
+- **Draft word processor** (`apps/web`, React, Tiptap and Vite). A page with a
+  Word-style ribbon (Home, Insert and View work; the rest say "coming soon").
+  Sections, paragraphs, bold, emphasis, small caps, lists and footnotes. Each
+  ribbon button shows the LaTeX it makes.
+- **Opens and saves LaTeX.** Anything the editor doesn't understand yet stays
+  as LaTeX in a box you can edit. A read-only LaTeX source view, a live word
+  count from LibreLeaf TeXCount, and a draft that is kept between sessions.
+- **Desktop app for Windows, Linux and Raspberry Pi OS** (Tauri 2, Rust). It
+  uses native open and save dialogs. Installers: `.exe` and `.msi`; `.deb`,
+  `.AppImage` and `.rpm`; and an arm64 `.deb` for the Pi. The release build is
+  tuned for size. Not code-signed yet.
+- **Doc model** (`packages/doc-model`). LaTeX to a structured document and
+  back. All 21 test papers come back byte for byte. See
+  [ADR 0001](docs/adr/0001-doc-model.md).
+- **Where it runs.** [ADR 0002](docs/adr/0002-deployment.md) compares Render,
+  desktop-first and in-browser compiling, and recommends desktop first with
+  Tectonic.
+- **Project.** npm workspaces (`apps/*`, `packages/*`). CI also builds the
+  editor. A release workflow builds the installers when a `v*` tag is pushed.
+
 ## v0.0.2 (alpha), 2026-10-28
 
 Polish and a better word counter.
