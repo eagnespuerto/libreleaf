@@ -1,0 +1,13 @@
+{
+  "name": "@libreleaf/doc-model",
+  "version": "0.0.3",
+  "private": true,
+  "type": "module",
+  "description": "LaTeX <-> structured document conversion for LibreLeaf (option C).",
+  "license": "AGPL-3.0-or-later",
+  "main": "latex.js",
+  "exports": { ".": "./latex.js" },
+  "scripts": {
+    "roundtrip": "node roundtrip.js"
+  }
+}

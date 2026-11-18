@@ -1,0 +1,91 @@
+/* Palette from docs/DESIGN.md §2a. */
+:root {
+  --canvas: #E0D9D9; --page: #F7F4F4; --surface: #EEE9E9; --text: #432323;
+  --primary: #2F5755; --on-primary: #E0D9D9; --accent: #2F5755;
+  --accent-subtle: rgba(90, 150, 144, .25); --line: rgba(67, 35, 35, .15);
+  --raw-bg: rgba(47, 87, 85, .07); --raw-text: #2F5755; --math: #16476A;
+  --comment: #7a6464;
+  --ui: 'Red Hat Display', system-ui, sans-serif;
+  --mono: 'Red Hat Mono', ui-monospace, Consolas, monospace;
+  --serif: 'Latin Modern Roman', 'CMU Serif', Georgia, 'Times New Roman', serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --canvas: #432323; --surface: #523030; --text: #E0D9D9; --accent: #7DB3AD;
+    --accent-subtle: #2F5755; --line: rgba(224, 217, 217, .18); color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; margin: 0; }
+body { font-family: var(--ui); color: var(--text); background: var(--canvas); }
+button { font: inherit; color: inherit; }
+
+.app { display: grid; grid-template-rows: auto auto 1fr auto; height: 100%; }
+
+.titlebar { display: flex; align-items: center; gap: .6rem; padding: .45rem 1rem; background: var(--surface); border-bottom: 1px solid var(--line); }
+.brand { font-family: 'Playfair Display', serif; font-weight: 600; font-size: 1.15rem; color: var(--accent); }
+.docname { font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 40vw; }
+.badge { font-size: .72rem; padding: .1rem .45rem; border-radius: 999px; background: var(--accent-subtle); }
+.spacer { flex: 1; }
+.tb { border: 1px solid var(--line); background: transparent; border-radius: 6px; padding: .3rem .7rem; cursor: pointer; }
+.tb:hover { background: var(--accent-subtle); }
+.tb.primary { background: var(--primary); color: var(--on-primary); border-color: transparent; }
+
+.ribbon { background: var(--surface); border-bottom: 1px solid var(--line); }
+.tabs { display: flex; gap: .15rem; padding: 0 .75rem; overflow-x: auto; }
+.tab { border: 0; background: none; padding: .45rem .8rem; cursor: pointer; border-bottom: 2px solid transparent; font-weight: 500; }
+.tab.on { border-bottom-color: var(--accent); color: var(--accent); }
+.toolbar { display: flex; flex-wrap: wrap; align-items: stretch; gap: 0; padding: .35rem .75rem .25rem; min-height: 4.1rem; }
+.rgroup { display: flex; flex-direction: column; padding: 0 .6rem; border-right: 1px solid var(--line); }
+.rgroup:last-of-type { border-right: 0; }
+.rgroup-body { display: flex; gap: .2rem; align-items: center; flex: 1; }
+.rgroup-label { font-size: .68rem; text-align: center; opacity: .7; padding-top: .15rem; }
+.rb { border: 1px solid transparent; background: none; border-radius: 5px; padding: .3rem .55rem; cursor: pointer; min-width: 2rem; }
+.rb:hover:not(:disabled) { background: var(--accent-subtle); }
+.rb.active { background: var(--accent-subtle); border-color: var(--accent); }
+.rb:disabled { opacity: .4; cursor: default; }
+.rb:focus-visible, .tab:focus-visible, .tb:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.soon { margin: auto 0; opacity: .7; font-size: .9rem; }
+
+.workspace { overflow: hidden; display: grid; grid-template-columns: 1fr; }
+.workspace.split { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.canvas { overflow: auto; padding: 1.5rem 1rem 4rem; }
+.page {
+  background: var(--page); color: #2a1a1a; max-width: 8.5in; min-height: 11in; margin: 0 auto;
+  padding: 1in 1in; box-shadow: 0 1px 3px rgba(0,0,0,.15), 0 6px 20px rgba(0,0,0,.08);
+  font-family: var(--serif); font-size: 12pt; line-height: 1.5; outline: none;
+  counter-reset: fn;
+}
+.page h1, .page h2, .page h3 { font-family: var(--serif); font-weight: 700; line-height: 1.25; margin: 1.4em 0 .5em; }
+.page h1 { font-size: 1.45em; } .page h2 { font-size: 1.2em; } .page h3 { font-size: 1.05em; }
+.page p { margin: 0 0 .75em; text-align: justify; hyphens: auto; }
+.page ul, .page ol { padding-left: 1.6em; }
+.small-caps { font-variant: small-caps; }
+
+.raw-block { margin: .6em 0; border: 1px dashed var(--line); border-radius: 6px; background: var(--raw-bg); font-family: var(--mono); font-size: 10pt; }
+.raw-block.selected { outline: 2px solid var(--accent); }
+.raw-block-head { display: flex; gap: .6rem; align-items: baseline; padding: .25rem .5rem; font-family: var(--ui); font-size: 9.5pt; color: var(--raw-text); }
+.raw-block-head button { border: 0; background: none; cursor: pointer; font-weight: 600; color: inherit; padding: 0; }
+.raw-block-peek { opacity: .7; font-family: var(--mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.latex-field { width: 100%; font-family: var(--mono); font-size: 10pt; color: #2a1a1a; background: transparent; border: 0; border-top: 1px dashed var(--line); padding: .4rem .55rem; resize: vertical; outline: none; }
+.latex-field.inline { width: auto; border: 1px solid var(--accent); border-radius: 3px; padding: 0 .2rem; background: #fff; }
+
+.raw-inline { font-family: var(--mono); font-size: .82em; color: var(--raw-text); background: var(--raw-bg); border-radius: 3px; padding: 0 .15em; cursor: default; white-space: pre-wrap; }
+.raw-inline.math { color: var(--math); }
+.raw-inline.comment { color: var(--comment); font-style: italic; background: none; }
+.raw-inline.selected, .footnote.selected { outline: 2px solid var(--accent); }
+.footnote { cursor: help; }
+.footnote-mark::before { counter-increment: fn; content: counter(fn); color: var(--accent); font-family: var(--ui); font-weight: 700; font-size: .75em; }
+
+.source { border-left: 1px solid var(--line); background: var(--surface); display: flex; flex-direction: column; min-height: 0; }
+.source-head { padding: .4rem .8rem; font-size: .8rem; opacity: .75; border-bottom: 1px solid var(--line); }
+.source pre { margin: 0; padding: .8rem; overflow: auto; flex: 1; font-family: var(--mono); font-size: 9.5pt; white-space: pre-wrap; }
+
+.statusbar { display: flex; gap: 1rem; padding: .25rem 1rem; font-size: .8rem; background: var(--surface); border-top: 1px solid var(--line); }
+
+@media (max-width: 700px) {
+  .page { padding: .6in .5in; min-height: auto; }
+  .workspace.split { grid-template-columns: 1fr; grid-template-rows: 1fr 1fr; }
+  .docname, .badge { display: none; }
+}
