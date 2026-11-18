@@ -16,7 +16,8 @@ A first draft of the word processor, and desktop installers.
   `.AppImage` and `.rpm`; and an arm64 `.deb` for the Pi. The release build is
   tuned for size. Not code-signed yet.
 - **Doc model** (`packages/doc-model`). LaTeX to a structured document and
-  back. All 21 test papers come back byte for byte. See
+  back. All 36 test files (24 projects, three from arXiv) come back byte
+  for byte. See
   [ADR 0001](docs/adr/0001-doc-model.md).
 - **Where it runs.** [ADR 0002](docs/adr/0002-deployment.md) compares Render,
   desktop-first and in-browser compiling, and recommends desktop first with

@@ -54,9 +54,9 @@ and Raspberry Pi OS, pulling part of week 3 forward.*
       option A (the LaTeX text is the master copy) and option C (a structured
       document as the master copy, with raw-LaTeX blocks kept as-is). Measure
       how well each one round-trips the week-1 arXiv set.
-      Record the result in `docs/adr/0001-doc-model.md`. *(Option C: 21/21
-      files byte-exact. The arXiv set wasn't on disk, so it used 21 local
-      papers; rerun on arXiv before v0.2.0.)*
+      Record the result in `docs/adr/0001-doc-model.md`. *(Option C: 36/36
+      files byte-exact, from 24 projects including three arXiv papers.
+      Grow it to 50 arXiv papers before v0.2.0.)*
 - [x] **Project scaffold.** *(npm workspaces, not pnpm.)* pnpm workspace, Vite, React and TypeScript in
       `apps/web`. The word counter becomes `packages/texcount`, published to the
       site as it is today.

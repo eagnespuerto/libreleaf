@@ -34,10 +34,12 @@ because it loses LaTeX it doesn't understand.)
 ## Results
 
 The week-1 arXiv sources were not kept on disk, and arXiv's `robots.txt`
-does not allow scripted downloads of `/e-print`. So this run uses 21 local
-papers instead: four of our own notes (RNAAS and Zenodo) and 17 journal
-templates and samples that ship with TeX Live 2026 (AASTeX, REVTeX, IEEEtran,
-elsarticle, MNRAS, amsart, SPIE, Kluwer and others).
+does not allow scripted downloads of `/e-print`. So this run uses 24
+projects (36 `.tex` files) on disk: three arXiv papers downloaded by hand
+(2605.00170, 2610.33373 and 2611.16046, the last with 11 files), four of our
+own notes (RNAAS and Zenodo), and 17 journal templates and samples that ship
+with TeX Live 2026 (AASTeX, REVTeX, IEEEtran, elsarticle, MNRAS, amsart,
+SPIE, Kluwer and others).
 
 ```
 npm run roundtrip -- ~/libreleaf-corpus-local
@@ -45,10 +47,10 @@ npm run roundtrip -- ~/libreleaf-corpus-local
 
 | | A | C |
 |---|---|---|
-| Files that come back byte for byte | 21 / 21 | **21 / 21** |
-| Files that come back the same after editing (whitespace aside) | — | **21 / 21** |
-| Share of the document body that is editable as text | same as C | **44.7%** (36–59% on our four notes) |
-| Time to parse and save all 21 files | 0 | 53 ms |
+| Files that come back byte for byte | 36 / 36 | **36 / 36** |
+| Files that come back the same after editing (whitespace aside) | — | **36 / 36** |
+| Share of the document body that is editable as text | same as C | **41.8%** overall; 48–61% in the main file of each arXiv paper, 36–59% in our notes |
+| Time to parse and save all 36 files | 0 | 93 ms |
 
 Notes:
 
@@ -69,7 +71,7 @@ Notes:
 
 **Use option C**, as SPEC §3 recommended going in.
 
-- It round-trips every file we tried, byte for byte, so it loses nothing.
+- It round-trips all 36 files we tried, byte for byte, so it loses nothing.
 - It gives a real word-processor page, which is the point of LibreLeaf.
   Option A would need its own visual layer over the text, and it would never
   feel like a word processor for the people we are building for.
@@ -83,6 +85,6 @@ Notes:
 - Git diffs of a paper saved from the editor can show re-wrapped paragraphs.
   We keep `sep` so untouched blocks don't move, and later we can keep the
   original line breaks of unedited paragraphs too.
-- Before v0.2.0 we should rerun the harness on 50 arXiv papers (SPEC 0.2).
-  The sources need to be downloaded by hand, since arXiv doesn't allow it by
-  script.
+- Before v0.2.0 we should rerun the harness on 50 arXiv papers (SPEC 0.2);
+  three are done. The sources need to be downloaded by hand, since arXiv
+  doesn't allow it by script.
